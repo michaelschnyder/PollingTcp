@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+  For more info on this file format visit http://docs.nuget.org/docs/reference/nuspec-reference.
+-->
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">  
+  <metadata>
+    <id>PollingTcp</id>
+    <version>1.0.0</version>
+    <authors>Michael Schnyder</authors>
+    <description>Sample exists only to show a sample .nuspec file.</description>
+    <language>en-US</language>
+  </metadata>
+</package>
