@@ -5,7 +5,7 @@ VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PollingTcp", "PollingTcp\PollingTcp.csproj", "{EC757C9E-C550-49DA-ADDD-96BEF426829C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PollingTcp.Tests", "..\PollingTcp.Tests\PollingTcp.Tests.csproj", "{8CF93B86-4CB4-4854-86F9-EB166CEEC83D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PollingTcp.Tests", "PollingTcp.Tests\PollingTcp.Tests.csproj", "{8CF93B86-4CB4-4854-86F9-EB166CEEC83D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
