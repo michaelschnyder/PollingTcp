@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>$id$</id>
-    <!--<version>$APPVEYOR_BUILD_VERSION$.$APPVEYOR_BUILD_VERSION$-Pre</version>-->
+    <version>$APPVEYOR_BUILD_VERSION$-Pre+$APPVEYOR_BUILD_ID$</version>
     <version>$version$</version>
     <title>$title$</title>
     <authors>Michael Schnyder</authors>
