@@ -4,10 +4,10 @@
     <id>$id$</id>
     <version>$version$</version>
     <title>$title$</title>
-    <authors>$author$</authors>
-    <owners>$author$</owners>
+    <authors>Michael Schnyder</authors>
+    <owners>Michael Schnyder</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>$description$</description>
+    <description></description>
     <copyright>Copyright 2014</copyright>
   </metadata>
 </package>
