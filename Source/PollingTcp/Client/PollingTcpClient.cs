@@ -16,7 +16,7 @@ namespace PollingTcp.Client
         {
             if (this.logicalLinkLayer == null)
             {
-                throw new Exception("Locgical Link Layer is not set!");
+                throw new Exception("Logical Link Layer is not set!");
             }
         }
 
