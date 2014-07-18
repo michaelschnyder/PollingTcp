@@ -44,6 +44,9 @@
     <Compile Include="Common\ILogicalLinkLayer.cs" />
     <Compile Include="Client\PollingTcpClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Shared\CollectionExtensions.cs" />
+    <Compile Include="Shared\DataFrame.cs" />
+    <Compile Include="Shared\FrameBuffer.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Server\" />
