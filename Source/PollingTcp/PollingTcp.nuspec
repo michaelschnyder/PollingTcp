@@ -7,7 +7,7 @@
     <authors>Michael Schnyder</authors>
     <owners>Michael Schnyder</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description></description>
+    <description>PollingTcp provides a connection-like protocol even if there is only semi-directional communication possible. Additional PlllingTCP handles message lost and message ordering like the original TCP.</description>
     <copyright>Copyright 2014</copyright>
   </metadata>
 </package>
