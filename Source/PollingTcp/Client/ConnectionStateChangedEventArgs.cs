@@ -1,6 +1,8 @@
-﻿namespace PollingTcp.Client
+﻿using System;
+
+namespace PollingTcp.Client
 {
-    public class ConnectionStateChangedEventArgs
+    public class ConnectionStateChangedEventArgs : EventArgs
     {
         public ConnectionState State { get; set; }
         public ConnectionState PreviousState { get; set; }
