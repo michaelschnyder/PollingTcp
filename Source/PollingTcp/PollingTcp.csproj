@@ -41,6 +41,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Client\ConnectionState.cs" />
+    <Compile Include="Client\ConnectionStateChangedEventArgs.cs" />
     <Compile Include="Common\ILogicalLinkLayer.cs" />
     <Compile Include="Client\PollingTcpClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

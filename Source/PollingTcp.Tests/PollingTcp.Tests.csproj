@@ -51,6 +51,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="FrameBufferTests.cs" />
+    <Compile Include="PollingTcpClientTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
