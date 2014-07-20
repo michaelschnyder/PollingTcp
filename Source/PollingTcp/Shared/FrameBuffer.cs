@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using PollingTcp.Shared.TunnelMeOut.Common.Shared;
 
 namespace PollingTcp.Shared
 {
@@ -10,18 +9,15 @@ namespace PollingTcp.Shared
         private readonly int maxSequenceValue;
 
         readonly List<int> missingFrameIds = new List<int>();
-        List<DataFrame> cache = new List<DataFrame>();
 
-        private int maxReceivedFrameId;
-        private int localProcessedFrameId;
         private bool isUnused = true;
+        private readonly DataFrame[] buffer;
+        
+        private int remoteSequenceNr;
+        private int localSequenceNr;
+        private const double AcceptanceWindowTolerance = 0.3;
 
         public event EventHandler<FrameReceivedEventArgs> FrameReceived;
-
-        public int LocalProcessedFrameId
-        {
-            get { return this.localProcessedFrameId; }
-        }
 
         protected virtual void OnFrameReceived(FrameReceivedEventArgs e)
         {
@@ -32,124 +28,125 @@ namespace PollingTcp.Shared
         public FrameBuffer(int maxSequenceValue)
         {
             this.maxSequenceValue = maxSequenceValue;
+
+            this.buffer = new DataFrame[maxSequenceValue + 1];
         }
 
         public void Add(DataFrame frame)
         {
-            if (this.cache.Count == 0 && (this.isUnused || frame.FrameId == this.LocalProcessedFrameId + 1 || (frame.FrameId == 0 && this.LocalProcessedFrameId == this.maxSequenceValue)))
+            if (frame.FrameId > this.maxSequenceValue)
             {
-                // Everthing is ok
-                this.localProcessedFrameId = frame.FrameId;
+                throw new ArgumentOutOfRangeException("frame", frame.FrameId, "The value of the frameId should be lower or equal the max sequence value defined.");
+            }
 
+            this.buffer[frame.FrameId] = frame;
+
+            if (this.isUnused)
+            {
+                // is this the first frame
+                this.localSequenceNr = frame.FrameId;
+                
                 this.OnFrameReceived(new FrameReceivedEventArgs()
                 {
-                    Data = new[] { frame }
+                    Data = new[] {frame}
                 });
+
+                this.buffer[frame.FrameId] = null;
+            }
+            else if (frame.FrameId == this.localSequenceNr + 1 || (localSequenceNr == this.maxSequenceValue && frame.FrameId == 0))
+            {
+                // Calculate Acceptance Window values
+                var windowRange = this.maxSequenceValue * AcceptanceWindowTolerance;
+                var lowerRange = (int)(this.remoteSequenceNr - windowRange / 2);
+                var higherRange = (int)(this.remoteSequenceNr + windowRange / 2) + 1;
+
+                bool rangeCheckSucceded;
+
+                if (lowerRange >= 0 && higherRange <= this.maxSequenceValue)
+                {
+                    rangeCheckSucceded = (frame.FrameId >= lowerRange && frame.FrameId <= higherRange);
+                }
+                else
+                {
+                    // This is a overrun situation
+                    if (higherRange > this.maxSequenceValue)
+                    {
+                        higherRange = higherRange % this.buffer.Length;
+                    }
+                    else if (lowerRange < 0)
+                    {
+                        lowerRange = this.maxSequenceValue - lowerRange - 1;
+                    }
+
+                    rangeCheckSucceded = (frame.FrameId >= lowerRange && frame.FrameId <= this.maxSequenceValue) || (frame.FrameId >= 0 && frame.FrameId <= higherRange);
+                }
+
+                if (!rangeCheckSucceded)
+                {
+                    throw new ArgumentOutOfRangeException("frame", frame.FrameId, string.Format("The frameId is should be in the range from {0} to {1}", lowerRange, higherRange));
+                }
+
+
+                // this is an expected frame
+                if (this.missingFrameIds.Contains(frame.FrameId))
+                {
+                    // find complete ranges starting with the current localSqeucneNr up to the currentRemoteSequenceNr
+                    var foundBlock = new List<DataFrame>();
+                    
+                    for (int sequenceId = localSequenceNr + 1; sequenceId <= this.maxSequenceValue + frame.FrameId; sequenceId++)
+                    {
+                        var bufferId = sequenceId % this.buffer.Length;
+                        if (this.buffer[bufferId] != null)
+                        {
+                            foundBlock.Add(this.buffer[bufferId]);
+                            this.buffer[bufferId] = null;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    if (foundBlock.Any())
+                    {
+                        this.localSequenceNr = foundBlock.Last().FrameId;
+
+                        this.OnFrameReceived(new FrameReceivedEventArgs()
+                        {
+                            Data = foundBlock.ToArray()
+                        });
+                    }
+                }
+                else
+                {
+                    this.localSequenceNr = frame.FrameId;
+
+                    this.OnFrameReceived(new FrameReceivedEventArgs()
+                    {
+                        Data = new[] { frame }
+                    });
+                }
             }
             else
             {
-                var isOverrun = this.cache.Count > 0 && this.cache.Last().FrameId == this.maxSequenceValue + 1;
-                
-                this.cache.Add(frame);
+                // There is at least one frame missing, add the current frame to the cache and continue
+                this.buffer[frame.FrameId] = frame;
 
-                if (isOverrun)
+                for (int frameId = this.localSequenceNr + 1; frameId <= this.maxSequenceValue + frame.FrameId; frameId++)
                 {
-                    this.cache = this.cache.OrderByWithGap(clientFrame => clientFrame.FrameId).ToList();
-                }
-                else
-                {
-                    this.cache = this.cache.OrderBy(f => f.FrameId).ToList();
-                }
+                    var bufferId = frameId % this.buffer.Length;
 
-                if (!this.missingFrameIds.Contains(frame.FrameId))
-                {
-                    this.RecordMissingFrames(frame);
-                }
-                else
-                {
-                    var firstFrameId = this.cache[0].FrameId;
-
-                    if (firstFrameId == this.LocalProcessedFrameId + 1)
+                    if (this.buffer[bufferId] == null)
                     {
-                        var lastFrameId = this.cache.Last().FrameId > this.LocalProcessedFrameId ? this.cache.Last().FrameId : this.maxSequenceValue + this.cache.Last().FrameId;
-                        var i = 0;
-
-                        var newFrames = new List<DataFrame>();
-
-                        for (var cachedFrameId = firstFrameId; cachedFrameId <= lastFrameId; cachedFrameId++)
-                        {
-                            var expectedFrameId = cachedFrameId % this.maxSequenceValue;
-
-                            if (this.cache[i].FrameId == expectedFrameId)
-                            {
-                                newFrames.Add(this.cache[i]);
-                                i++;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-
-                        if (newFrames.Count > 0)
-                        {
-                            // Increase the current SequenceId
-                            this.localProcessedFrameId = newFrames.Last().FrameId;
-
-                            foreach (var clientFrame in newFrames)
-                            {
-                                this.cache.Remove(clientFrame);
-                            }
-
-                            this.OnFrameReceived(new FrameReceivedEventArgs()
-                            {
-                                Data = newFrames.ToArray()
-                            });
-                        }
+                        this.missingFrameIds.Add(frameId);
                     }
                 }
             }
 
-            if (frame.FrameId > this.maxReceivedFrameId)
-            {
-                this.maxReceivedFrameId = frame.FrameId;
-            }
-            else if (frame.FrameId == 0)
-            {
-                this.maxReceivedFrameId = 0;
-            }
+            this.remoteSequenceNr = frame.FrameId > this.remoteSequenceNr || frame.FrameId < this.maxSequenceValue * AcceptanceWindowTolerance ? frame.FrameId : this.remoteSequenceNr;
 
             this.isUnused = false;
-        }
 
-        private void RecordMissingFrames(DataFrame frame)
-        {
-            var fillUpTo = frame.FrameId > this.LocalProcessedFrameId ? frame.FrameId : this.maxSequenceValue + frame.FrameId;
-
-            // Add missing frames 
-            for (int missingFrameId = this.LocalProcessedFrameId + 1; missingFrameId < fillUpTo; missingFrameId++)
-            {
-                var frameId = missingFrameId%this.maxSequenceValue;
-
-                if (!this.missingFrameIds.Contains(frameId))
-                {
-                    this.missingFrameIds.Add(frameId);
-                }
-            }
-        }
-
-        internal byte[] GetData()
-        {
-            return null;
-        }
-    }
-
-    namespace TunnelMeOut.Common.Shared
-    {
-        public class FrameReceivedEventArgs : EventArgs
-        {
-            public int ClientId { get; set; }
-            public DataFrame[] Data { get; set; }
         }
     }
 }

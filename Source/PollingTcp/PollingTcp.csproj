@@ -47,6 +47,7 @@
     <Compile Include="Shared\CollectionExtensions.cs" />
     <Compile Include="Shared\DataFrame.cs" />
     <Compile Include="Shared\FrameBuffer.cs" />
+    <Compile Include="Shared\FrameReceivedEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Server\" />
