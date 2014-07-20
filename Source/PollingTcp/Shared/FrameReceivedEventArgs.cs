@@ -2,8 +2,8 @@ using System;
 
 namespace PollingTcp.Shared
 {
-    public class FrameReceivedEventArgs : EventArgs
+    public class FrameReceivedEventArgs<TDataFrameType> : EventArgs
     {
-        public DataFrame[] Data { get; set; }
+        public TDataFrameType[] Data { get; set; }
     }
 }

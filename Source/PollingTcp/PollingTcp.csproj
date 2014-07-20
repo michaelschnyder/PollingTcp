@@ -45,6 +45,7 @@
     <Compile Include="Client\PollingTcpClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Shared\CollectionExtensions.cs" />
+    <Compile Include="Shared\DataFrameBuffer.cs" />
     <Compile Include="Shared\DataFrame.cs" />
     <Compile Include="Shared\FrameBuffer.cs" />
     <Compile Include="Shared\FrameReceivedEventArgs.cs" />

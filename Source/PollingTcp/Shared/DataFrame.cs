@@ -2,7 +2,7 @@
 {
     public class DataFrame
     {
-        public int FrameId { get; set; }
+        public int SequenceId { get; set; }
     }
 
     public class ClientDataFrame : DataFrame

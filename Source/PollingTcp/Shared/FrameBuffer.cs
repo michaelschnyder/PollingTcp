@@ -4,24 +4,24 @@ using System.Linq;
 
 namespace PollingTcp.Shared
 {
-    public class FrameBuffer
+    public class FrameBuffer<TDataFrameType> where TDataFrameType : DataFrame
     {
         private readonly int maxSequenceValue;
 
         readonly List<int> missingFrameIds = new List<int>();
 
         private bool isUnused = true;
-        private readonly DataFrame[] buffer;
+        private readonly TDataFrameType[] buffer;
         
         private int remoteSequenceNr;
         private int localSequenceNr;
         private const double AcceptanceWindowTolerance = 0.3;
 
-        public event EventHandler<FrameReceivedEventArgs> FrameReceived;
+        public event EventHandler<FrameReceivedEventArgs<TDataFrameType>> FrameReceived;
 
-        protected virtual void OnFrameReceived(FrameReceivedEventArgs e)
+        protected virtual void OnFrameReceived(FrameReceivedEventArgs<TDataFrameType> e)
         {
-            EventHandler<FrameReceivedEventArgs> handler = this.FrameReceived;
+            EventHandler<FrameReceivedEventArgs<TDataFrameType>> handler = this.FrameReceived;
             if (handler != null) handler(this, e);
         }
 
@@ -29,31 +29,31 @@ namespace PollingTcp.Shared
         {
             this.maxSequenceValue = maxSequenceValue;
 
-            this.buffer = new DataFrame[maxSequenceValue + 1];
+            this.buffer = new TDataFrameType[maxSequenceValue + 1];
         }
 
-        public void Add(DataFrame frame)
+        public void Add(TDataFrameType frame)
         {
-            if (frame.FrameId > this.maxSequenceValue)
+            if (frame.SequenceId > this.maxSequenceValue)
             {
-                throw new ArgumentOutOfRangeException("frame", frame.FrameId, "The value of the frameId should be lower or equal the max sequence value defined.");
+                throw new ArgumentOutOfRangeException("frame", frame.SequenceId, "The value of the frameId should be lower or equal the max sequence value defined.");
             }
 
-            this.buffer[frame.FrameId] = frame;
+            this.buffer[frame.SequenceId] = frame;
 
             if (this.isUnused)
             {
                 // is this the first frame
-                this.localSequenceNr = frame.FrameId;
-                
-                this.OnFrameReceived(new FrameReceivedEventArgs()
+                this.localSequenceNr = frame.SequenceId;
+
+                this.OnFrameReceived(new FrameReceivedEventArgs<TDataFrameType>()
                 {
                     Data = new[] {frame}
                 });
 
-                this.buffer[frame.FrameId] = null;
+                this.buffer[frame.SequenceId] = null;
             }
-            else if (frame.FrameId == this.localSequenceNr + 1 || (localSequenceNr == this.maxSequenceValue && frame.FrameId == 0))
+            else if (frame.SequenceId == this.localSequenceNr + 1 || (localSequenceNr == this.maxSequenceValue && frame.SequenceId == 0))
             {
                 // Calculate Acceptance Window values
                 var windowRange = this.maxSequenceValue * AcceptanceWindowTolerance;
@@ -64,7 +64,7 @@ namespace PollingTcp.Shared
 
                 if (lowerRange >= 0 && higherRange <= this.maxSequenceValue)
                 {
-                    rangeCheckSucceded = (frame.FrameId >= lowerRange && frame.FrameId <= higherRange);
+                    rangeCheckSucceded = (frame.SequenceId >= lowerRange && frame.SequenceId <= higherRange);
                 }
                 else
                 {
@@ -78,22 +78,21 @@ namespace PollingTcp.Shared
                         lowerRange = this.maxSequenceValue - lowerRange - 1;
                     }
 
-                    rangeCheckSucceded = (frame.FrameId >= lowerRange && frame.FrameId <= this.maxSequenceValue) || (frame.FrameId >= 0 && frame.FrameId <= higherRange);
+                    rangeCheckSucceded = (frame.SequenceId >= lowerRange && frame.SequenceId <= this.maxSequenceValue) || (frame.SequenceId >= 0 && frame.SequenceId <= higherRange);
                 }
 
                 if (!rangeCheckSucceded)
                 {
-                    throw new ArgumentOutOfRangeException("frame", frame.FrameId, string.Format("The frameId is should be in the range from {0} to {1}", lowerRange, higherRange));
+                    throw new ArgumentOutOfRangeException("frame", frame.SequenceId, string.Format("The frameId is should be in the range from {0} to {1}", lowerRange, higherRange));
                 }
 
-
                 // this is an expected frame
-                if (this.missingFrameIds.Contains(frame.FrameId))
+                if (this.missingFrameIds.Contains(frame.SequenceId))
                 {
                     // find complete ranges starting with the current localSqeucneNr up to the currentRemoteSequenceNr
-                    var foundBlock = new List<DataFrame>();
+                    var foundBlock = new List<TDataFrameType>();
                     
-                    for (int sequenceId = localSequenceNr + 1; sequenceId <= this.maxSequenceValue + frame.FrameId; sequenceId++)
+                    for (int sequenceId = localSequenceNr + 1; sequenceId <= this.maxSequenceValue + frame.SequenceId; sequenceId++)
                     {
                         var bufferId = sequenceId % this.buffer.Length;
                         if (this.buffer[bufferId] != null)
@@ -109,9 +108,9 @@ namespace PollingTcp.Shared
 
                     if (foundBlock.Any())
                     {
-                        this.localSequenceNr = foundBlock.Last().FrameId;
+                        this.localSequenceNr = foundBlock.Last().SequenceId;
 
-                        this.OnFrameReceived(new FrameReceivedEventArgs()
+                        this.OnFrameReceived(new FrameReceivedEventArgs<TDataFrameType>()
                         {
                             Data = foundBlock.ToArray()
                         });
@@ -119,9 +118,9 @@ namespace PollingTcp.Shared
                 }
                 else
                 {
-                    this.localSequenceNr = frame.FrameId;
+                    this.localSequenceNr = frame.SequenceId;
 
-                    this.OnFrameReceived(new FrameReceivedEventArgs()
+                    this.OnFrameReceived(new FrameReceivedEventArgs<TDataFrameType>()
                     {
                         Data = new[] { frame }
                     });
@@ -130,9 +129,9 @@ namespace PollingTcp.Shared
             else
             {
                 // There is at least one frame missing, add the current frame to the cache and continue
-                this.buffer[frame.FrameId] = frame;
+                this.buffer[frame.SequenceId] = frame;
 
-                for (int frameId = this.localSequenceNr + 1; frameId <= this.maxSequenceValue + frame.FrameId; frameId++)
+                for (int frameId = this.localSequenceNr + 1; frameId <= this.maxSequenceValue + frame.SequenceId; frameId++)
                 {
                     var bufferId = frameId % this.buffer.Length;
 
@@ -143,10 +142,9 @@ namespace PollingTcp.Shared
                 }
             }
 
-            this.remoteSequenceNr = frame.FrameId > this.remoteSequenceNr || frame.FrameId < this.maxSequenceValue * AcceptanceWindowTolerance ? frame.FrameId : this.remoteSequenceNr;
+            this.remoteSequenceNr = frame.SequenceId > this.remoteSequenceNr || frame.SequenceId < this.maxSequenceValue * AcceptanceWindowTolerance ? frame.SequenceId : this.remoteSequenceNr;
 
             this.isUnused = false;
-
         }
     }
 }

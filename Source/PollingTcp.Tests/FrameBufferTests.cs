@@ -9,111 +9,111 @@ namespace PollingTcp.Tests
     public class FrameCacheTests
     {
         [TestMethod]
-        public void EmptyCache_WhenSingleFrameAdded_ShouldNotBeBuffered()
+        public void SingleFrame_AddedToBuffer_ReturnImediately()
         {
             var maxSequenceValue = 10;
             var receivedFrameId = 0;
 
-            var frame = new DataFrame { FrameId = 5 };
+            var frame = new DataFrame { SequenceId = 5 };
 
-            var cache = new FrameBuffer(maxSequenceValue);
-            cache.FrameReceived += (sender, args) => receivedFrameId = args.Data[0].FrameId;
+            var buffer = new DataFrameBuffer(maxSequenceValue);
+            buffer.FrameReceived += (sender, args) => receivedFrameId = args.Data[0].SequenceId;
 
-            cache.Add(frame);
+            buffer.Add(frame);
 
-            Assert.AreEqual(frame.FrameId, receivedFrameId);
+            Assert.AreEqual(frame.SequenceId, receivedFrameId);
         }
 
         [TestMethod]
-        public void EmptyCache_RightOrderedFramesAdded_ShouldNotBeBuffered()
+        public void TwoFrames_AddedInRightOrder_ShouldNotBeBuffered()
         {
             var maxSequenceValue = 10;
             var receivedFrameId = 0;
 
-            var firstFrame = new DataFrame { FrameId = 5 };
-            var secondFrame = new DataFrame { FrameId = 6 };
+            var firstFrame = new DataFrame { SequenceId = 5 };
+            var secondFrame = new DataFrame { SequenceId = 6 };
 
-            var cache = new FrameBuffer(maxSequenceValue);
-            cache.FrameReceived += (sender, args) => receivedFrameId = args.Data[0].FrameId;
+            var cache = new DataFrameBuffer(maxSequenceValue);
+            cache.FrameReceived += (sender, args) => receivedFrameId = args.Data[0].SequenceId;
 
             cache.Add(firstFrame);
-            Assert.AreEqual(firstFrame.FrameId, receivedFrameId);
+            Assert.AreEqual(firstFrame.SequenceId, receivedFrameId);
 
             cache.Add(secondFrame);
-            Assert.AreEqual(secondFrame.FrameId, receivedFrameId);
+            Assert.AreEqual(secondFrame.SequenceId, receivedFrameId);
         }
 
         [TestMethod]
-        public void EmptyCache_TwoWrongOrderedFramesAdded_ShouldBeBuffered()
+        public void TwoFrames_AddedInWrongOrder_ShouldBeBuffered()
         {
             var maxSequenceValue = 10;
             var receivedFrameId = 0;
 
-            var initialFrame = new DataFrame { FrameId = 4 };
-            var firstFrame = new DataFrame { FrameId = 5 };
-            var secondFrame = new DataFrame { FrameId = 6 };
+            var initialFrame = new DataFrame { SequenceId = 4 };
+            var firstFrame = new DataFrame { SequenceId = 5 };
+            var secondFrame = new DataFrame { SequenceId = 6 };
 
-            var cache = new FrameBuffer(maxSequenceValue);
-            cache.FrameReceived += (sender, args) => receivedFrameId = args.Data.Last().FrameId;
+            var buffer = new DataFrameBuffer(maxSequenceValue);
+            buffer.FrameReceived += (sender, args) => receivedFrameId = args.Data.Last().SequenceId;
 
-            cache.Add(initialFrame);
+            buffer.Add(initialFrame);
 
-            cache.Add(secondFrame);
-            Assert.AreEqual(initialFrame.FrameId, receivedFrameId);
+            buffer.Add(secondFrame);
+            Assert.AreEqual(initialFrame.SequenceId, receivedFrameId);
 
-            cache.Add(firstFrame);
-            Assert.AreEqual(secondFrame.FrameId, receivedFrameId);
+            buffer.Add(firstFrame);
+            Assert.AreEqual(secondFrame.SequenceId, receivedFrameId);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
-        public void EmptyCache_AddingAFrameWithTooHighFrameId_AddShouldThrowAnException()
+        public void AFrameWithTooHighFrameId_WhenAddedToBuffer_ShouldThrowAnException()
         {
             var maxSequenceValue = 10;
 
-            var cache = new FrameBuffer(maxSequenceValue);
-            cache.Add(new DataFrame() { FrameId = maxSequenceValue + 1});
+            var cache = new DataFrameBuffer(maxSequenceValue);
+            cache.Add(new DataFrame() { SequenceId = maxSequenceValue + 1});
         }
 
         [TestMethod]
-        public void EmptyCache_OverrunWithOrderedFrames_ShouldNotBuffer()
+        public void TwoFramesWithOverrun_AddedInRightOrder_ShouldNotBuffer()
         {
             var maxSequenceValue = 10;
             var receivedFrameId = 0;
 
-            var firstFrame = new DataFrame { FrameId = 10 };
-            var secondFrame = new DataFrame { FrameId = 0 };
+            var firstFrame = new DataFrame { SequenceId = 10 };
+            var secondFrame = new DataFrame { SequenceId = 0 };
 
-            var cache = new FrameBuffer(maxSequenceValue);
-            cache.FrameReceived += (sender, args) => receivedFrameId = args.Data.Last().FrameId;
+            var buffer = new DataFrameBuffer(maxSequenceValue);
+            buffer.FrameReceived += (sender, args) => receivedFrameId = args.Data.Last().SequenceId;
 
-            cache.Add(firstFrame);
-            Assert.AreEqual(firstFrame.FrameId, receivedFrameId);
+            buffer.Add(firstFrame);
+            Assert.AreEqual(firstFrame.SequenceId, receivedFrameId);
 
-            cache.Add(secondFrame);
-            Assert.AreEqual(secondFrame.FrameId, receivedFrameId);
+            buffer.Add(secondFrame);
+            Assert.AreEqual(secondFrame.SequenceId, receivedFrameId);
         }
 
         [TestMethod]
-        public void EmptyCache_OverrunWithUnOrderedFrames_ShouldBuffer()
+        public void TwoFramesWithOverrun_AddedInWrongOrder_ShouldBuffer()
         {
             var maxSequenceValue = 10;
             var receivedFrameId = 0;
 
-            var initialFrame = new DataFrame { FrameId = 9 };
-            var firstFrame = new DataFrame { FrameId = 10 };
-            var secondFrame = new DataFrame { FrameId = 0 };
+            var initialFrame = new DataFrame { SequenceId = 9 };
+            var firstFrame = new DataFrame { SequenceId = 10 };
+            var secondFrame = new DataFrame { SequenceId = 0 };
 
-            var cache = new FrameBuffer(maxSequenceValue);
-            cache.FrameReceived += (sender, args) => receivedFrameId = args.Data.Last().FrameId;
+            var buffer = new DataFrameBuffer(maxSequenceValue);
+            buffer.FrameReceived += (sender, args) => receivedFrameId = args.Data.Last().SequenceId;
 
-            cache.Add(initialFrame);
+            buffer.Add(initialFrame);
 
-            cache.Add(secondFrame);
-            Assert.AreEqual(initialFrame.FrameId, receivedFrameId);
+            buffer.Add(secondFrame);
+            Assert.AreEqual(initialFrame.SequenceId, receivedFrameId);
 
-            cache.Add(firstFrame);
-            Assert.AreEqual(secondFrame.FrameId, receivedFrameId);
+            buffer.Add(firstFrame);
+            Assert.AreEqual(secondFrame.SequenceId, receivedFrameId);
         }
     }
 }
