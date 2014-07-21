@@ -1,13 +1,16 @@
 ﻿using System;
 using PollingTcp.Common;
+using PollingTcp.Shared;
 
 namespace PollingTcp.Client
 {
-    public class PollingTcpClient
+    public class PollingTcpClient<TClientDataFrameType, TServerDataFrameType> where TClientDataFrameType : ClientDataFrame, new() where TServerDataFrameType : ServerDataFrame
     {
         private ConnectionState connectionState;
 
-        private readonly ILogicalLinkLayer logicalLinkLayer;
+        private readonly IClientNetworkLinkLayer networkLinkLayer;
+        private TransportLinkLayer<TClientDataFrameType, TServerDataFrameType> transportLayer;
+        private int clientId;
 
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
 
@@ -17,9 +20,29 @@ namespace PollingTcp.Client
             if (handler != null) handler(this, e);
         }
 
-        public PollingTcpClient(ILogicalLinkLayer logicalLinkLayer)
+        public PollingTcpClient(IClientNetworkLinkLayer clientNetworkLinkLayer, FrameEncoder<TClientDataFrameType> encoder, FrameEncoder<TServerDataFrameType> decoder, int maxSequenceValue)
         {
-            this.logicalLinkLayer = logicalLinkLayer;
+            if (clientNetworkLinkLayer == null)
+            {
+                throw new Exception("Logical Link Layer is not set!");
+            }
+
+            this.networkLinkLayer = clientNetworkLinkLayer;
+            this.transportLayer = new TransportLinkLayer<TClientDataFrameType, TServerDataFrameType>(clientNetworkLinkLayer, encoder, decoder, maxSequenceValue);
+
+            this.transportLayer.FrameReceived += TransportLayerOnFrameReceived;
+        }
+
+        private void TransportLayerOnFrameReceived(object sender, FrameReceivedEventArgs<TServerDataFrameType> frameReceivedEventArgs)
+        {
+            if (this.connectionState == ConnectionState.Connecting)
+            {
+                var data = frameReceivedEventArgs.Frame.Payload;
+
+                this.clientId = BitConverter.ToInt32(data, 0);
+
+                this.SetNewConnectionState(ConnectionState.Connected);
+            }
         }
 
         public ConnectionState ConnectionState
@@ -29,17 +52,24 @@ namespace PollingTcp.Client
 
         public void Connect()
         {
-            if (this.logicalLinkLayer == null)
-            {
-                throw new Exception("Logical Link Layer is not set!");
-            }
-
             if (this.connectionState != ConnectionState.Disconnected)
             {
                 throw new Exception("Cannot start connection when not beeing in Disconnected-State");    
             }
 
             SetNewConnectionState(ConnectionState.Connecting);
+
+            // Send an empty DataFrame to initiate the connection
+            this.transportLayer.Send(new TClientDataFrameType());
+        }
+
+        public void Send(TClientDataFrameType frame)
+        {
+            if (this.ConnectionState != ConnectionState.Connected)
+            {
+                frame.ClientId = this.clientId;
+                this.transportLayer.Send(frame);
+            }
         }
 
         private void SetNewConnectionState(ConnectionState state)

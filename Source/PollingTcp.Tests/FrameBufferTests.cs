@@ -6,7 +6,7 @@ using PollingTcp.Shared;
 namespace PollingTcp.Tests
 {
     [TestClass]
-    public class FrameCacheTests
+    public class FrameBufferTests
     {
         [TestMethod]
         public void SingleFrame_AddedToBuffer_ReturnImediately()
@@ -17,7 +17,7 @@ namespace PollingTcp.Tests
             var frame = new DataFrame { SequenceId = 5 };
 
             var buffer = new DataFrameBuffer(maxSequenceValue);
-            buffer.FrameReceived += (sender, args) => receivedFrameId = args.Data[0].SequenceId;
+            buffer.FrameBlockReceived += (sender, args) => receivedFrameId = args.Data[0].SequenceId;
 
             buffer.Add(frame);
 
@@ -34,7 +34,7 @@ namespace PollingTcp.Tests
             var secondFrame = new DataFrame { SequenceId = 6 };
 
             var cache = new DataFrameBuffer(maxSequenceValue);
-            cache.FrameReceived += (sender, args) => receivedFrameId = args.Data[0].SequenceId;
+            cache.FrameBlockReceived += (sender, args) => receivedFrameId = args.Data[0].SequenceId;
 
             cache.Add(firstFrame);
             Assert.AreEqual(firstFrame.SequenceId, receivedFrameId);
@@ -54,7 +54,7 @@ namespace PollingTcp.Tests
             var secondFrame = new DataFrame { SequenceId = 6 };
 
             var buffer = new DataFrameBuffer(maxSequenceValue);
-            buffer.FrameReceived += (sender, args) => receivedFrameId = args.Data.Last().SequenceId;
+            buffer.FrameBlockReceived += (sender, args) => receivedFrameId = args.Data.Last().SequenceId;
 
             buffer.Add(initialFrame);
 
@@ -85,7 +85,7 @@ namespace PollingTcp.Tests
             var secondFrame = new DataFrame { SequenceId = 0 };
 
             var buffer = new DataFrameBuffer(maxSequenceValue);
-            buffer.FrameReceived += (sender, args) => receivedFrameId = args.Data.Last().SequenceId;
+            buffer.FrameBlockReceived += (sender, args) => receivedFrameId = args.Data.Last().SequenceId;
 
             buffer.Add(firstFrame);
             Assert.AreEqual(firstFrame.SequenceId, receivedFrameId);
@@ -105,7 +105,7 @@ namespace PollingTcp.Tests
             var secondFrame = new DataFrame { SequenceId = 0 };
 
             var buffer = new DataFrameBuffer(maxSequenceValue);
-            buffer.FrameReceived += (sender, args) => receivedFrameId = args.Data.Last().SequenceId;
+            buffer.FrameBlockReceived += (sender, args) => receivedFrameId = args.Data.Last().SequenceId;
 
             buffer.Add(initialFrame);
 

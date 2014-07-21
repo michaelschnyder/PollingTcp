@@ -2,7 +2,7 @@ using System;
 
 namespace PollingTcp.Shared
 {
-    public class FrameReceivedEventArgs<TDataFrameType> : EventArgs
+    public class FrameBlockReceivedEventArgs<TDataFrameType> : EventArgs
     {
         public TDataFrameType[] Data { get; set; }
     }

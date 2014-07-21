@@ -43,20 +43,27 @@
   <ItemGroup>
     <Compile Include="Client\ConnectionState.cs" />
     <Compile Include="Client\ConnectionStateChangedEventArgs.cs" />
-    <Compile Include="Common\ILogicalLinkLayer.cs" />
+    <Compile Include="Common\DataReceivedEventArgs.cs" />
+    <Compile Include="Common\FrameEncoder.cs" />
+    <Compile Include="Common\FrameReceivedEventArgs.cs" />
+    <Compile Include="Client\IClientNetworkLinkLayer.cs" />
+    <Compile Include="Common\INetworkLinkLayer.cs" />
+    <Compile Include="Common\TransportLinkLayer.cs" />
     <Compile Include="Client\PollingTcpClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Shared\CollectionExtensions.cs" />
     <Compile Include="Shared\DataFrameBuffer.cs" />
     <Compile Include="Shared\DataFrame.cs" />
     <Compile Include="Shared\FrameBuffer.cs" />
-    <Compile Include="Shared\FrameReceivedEventArgs.cs" />
+    <Compile Include="Shared\FrameBlockReceivedEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Server\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="PollingTcp.nuspec" />
+    <None Include="PollingTcp.nuspec">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

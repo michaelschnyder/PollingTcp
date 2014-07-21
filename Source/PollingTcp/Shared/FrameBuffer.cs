@@ -17,11 +17,11 @@ namespace PollingTcp.Shared
         private int localSequenceNr;
         private const double AcceptanceWindowTolerance = 0.3;
 
-        public event EventHandler<FrameReceivedEventArgs<TDataFrameType>> FrameReceived;
+        public event EventHandler<FrameBlockReceivedEventArgs<TDataFrameType>> FrameBlockReceived;
 
-        protected virtual void OnFrameReceived(FrameReceivedEventArgs<TDataFrameType> e)
+        protected virtual void OnFrameReceived(FrameBlockReceivedEventArgs<TDataFrameType> e)
         {
-            EventHandler<FrameReceivedEventArgs<TDataFrameType>> handler = this.FrameReceived;
+            EventHandler<FrameBlockReceivedEventArgs<TDataFrameType>> handler = this.FrameBlockReceived;
             if (handler != null) handler(this, e);
         }
 
@@ -46,7 +46,7 @@ namespace PollingTcp.Shared
                 // is this the first frame
                 this.localSequenceNr = frame.SequenceId;
 
-                this.OnFrameReceived(new FrameReceivedEventArgs<TDataFrameType>()
+                this.OnFrameReceived(new FrameBlockReceivedEventArgs<TDataFrameType>()
                 {
                     Data = new[] {frame}
                 });
@@ -110,7 +110,7 @@ namespace PollingTcp.Shared
                     {
                         this.localSequenceNr = foundBlock.Last().SequenceId;
 
-                        this.OnFrameReceived(new FrameReceivedEventArgs<TDataFrameType>()
+                        this.OnFrameReceived(new FrameBlockReceivedEventArgs<TDataFrameType>()
                         {
                             Data = foundBlock.ToArray()
                         });
@@ -120,7 +120,7 @@ namespace PollingTcp.Shared
                 {
                     this.localSequenceNr = frame.SequenceId;
 
-                    this.OnFrameReceived(new FrameReceivedEventArgs<TDataFrameType>()
+                    this.OnFrameReceived(new FrameBlockReceivedEventArgs<TDataFrameType>()
                     {
                         Data = new[] { frame }
                     });
