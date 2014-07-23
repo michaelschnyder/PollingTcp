@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace PollingTcp.Shared
 {
-    public class FrameBuffer<TDataFrameType> where TDataFrameType : DataFrame
+    public class FrameBuffer<TDataFrameType> where TDataFrameType : SequencedDataFrame
     {
         private readonly int maxSequenceValue;
 
@@ -32,8 +32,10 @@ namespace PollingTcp.Shared
             this.buffer = new TDataFrameType[maxSequenceValue + 1];
         }
 
-        public void Add(TDataFrameType frame)
+        public object Add(TDataFrameType frame)
         {
+            object retVal = null;
+
             if (frame.SequenceId > this.maxSequenceValue)
             {
                 throw new ArgumentOutOfRangeException("frame", frame.SequenceId, "The value of the frameId should be lower or equal the max sequence value defined.");
@@ -46,10 +48,7 @@ namespace PollingTcp.Shared
                 // is this the first frame
                 this.localSequenceNr = frame.SequenceId;
 
-                this.OnFrameReceived(new FrameBlockReceivedEventArgs<TDataFrameType>()
-                {
-                    Data = new[] {frame}
-                });
+                retVal = this.RaiseEventHandler(new [] { frame });
 
                 this.buffer[frame.SequenceId] = null;
             }
@@ -109,21 +108,14 @@ namespace PollingTcp.Shared
                     if (foundBlock.Any())
                     {
                         this.localSequenceNr = foundBlock.Last().SequenceId;
-
-                        this.OnFrameReceived(new FrameBlockReceivedEventArgs<TDataFrameType>()
-                        {
-                            Data = foundBlock.ToArray()
-                        });
+                        this.RaiseEventHandler(foundBlock.ToArray());
                     }
                 }
                 else
                 {
                     this.localSequenceNr = frame.SequenceId;
 
-                    this.OnFrameReceived(new FrameBlockReceivedEventArgs<TDataFrameType>()
-                    {
-                        Data = new[] { frame }
-                    });
+                    this.RaiseEventHandler(new [] { frame });
                 }
             }
             else
@@ -145,6 +137,21 @@ namespace PollingTcp.Shared
             this.remoteSequenceNr = frame.SequenceId > this.remoteSequenceNr || frame.SequenceId < this.maxSequenceValue * AcceptanceWindowTolerance ? frame.SequenceId : this.remoteSequenceNr;
 
             this.isUnused = false;
+
+            return retVal;
+        }
+
+        private object RaiseEventHandler(TDataFrameType[] frameBlock)
+        {
+            object retVal;
+            var args = new FrameBlockReceivedEventArgs<TDataFrameType>()
+            {
+                Data = frameBlock
+            };
+
+            this.OnFrameReceived(args);
+            retVal = args.ReturnValue;
+            return retVal;
         }
     }
 }

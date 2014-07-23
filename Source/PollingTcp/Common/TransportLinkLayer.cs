@@ -4,9 +4,9 @@ using PollingTcp.Shared;
 
 namespace PollingTcp.Common
 {
-    public class TransportLinkLayer<TSendDataType, TReceiveDataType>  
-        where TSendDataType : DataFrame 
-        where TReceiveDataType : DataFrame
+    public class TransportLinkLayer<TSendDataType, TReceiveDataType>
+        where TSendDataType : SequencedDataFrame 
+        where TReceiveDataType : SequencedDataFrame
     {
         private readonly FrameEncoder<TSendDataType> encoder;
         private readonly FrameEncoder<TReceiveDataType> decoder;
@@ -17,6 +17,7 @@ namespace PollingTcp.Common
         private int localSequenceNr;
 
         public event EventHandler<FrameReceivedEventArgs<TReceiveDataType>> FrameReceived;
+        public Func<TReceiveDataType, TSendDataType> ProcessFrame { get; set; }
 
         protected virtual void OnFrameReceived(FrameReceivedEventArgs<TReceiveDataType> e)
         {
@@ -27,6 +28,7 @@ namespace PollingTcp.Common
         public TransportLinkLayer(INetworkLinkLayer networkLayer, FrameEncoder<TSendDataType> encoder, FrameEncoder<TReceiveDataType> decoder, int maxSequenceValue)
         {
             this.networkLayer = networkLayer;
+
             this.encoder = encoder;
             this.decoder = decoder;
             this.maxSequenceValue = maxSequenceValue;
@@ -34,9 +36,13 @@ namespace PollingTcp.Common
             this.incomingBuffer = new FrameBuffer<TReceiveDataType>(maxSequenceValue);
             this.incomingBuffer.FrameBlockReceived += this.IncomingBufferOnFrameBlockReceived;
 
-            this.networkLayer.DataReceived += this.NetworkLayerOnDataReceived;
-
             this.localSequenceNr = new Random((int) DateTime.UtcNow.Ticks).Next(1, maxSequenceValue);
+
+            var clientNetworkLinkLayer = this.networkLayer as IClientNetworkLinkLayer;
+            if (clientNetworkLinkLayer != null)
+            {
+                clientNetworkLinkLayer.DataReceived += this.NetworkLayerOnDataReceived;
+            }
         }
 
         private void NetworkLayerOnDataReceived(object sender, DataReceivedEventArgs dataReceivedEventArgs)
@@ -50,6 +56,17 @@ namespace PollingTcp.Common
         {
             foreach (var dataFrame in frameBlockReceivedEventArgs.Data)
             {
+                // Process via process method first
+                //if (this.ProcessFrame != null)
+                //{
+                //    var response = this.ProcessFrame(dataFrame);
+
+                //    if (response != null)
+                //    {
+                //        frameBlockReceivedEventArgs.ReturnValue = response;
+                //    }
+                //}
+
                 this.OnFrameReceived(new FrameReceivedEventArgs<TReceiveDataType>()
                 {
                     Frame = dataFrame

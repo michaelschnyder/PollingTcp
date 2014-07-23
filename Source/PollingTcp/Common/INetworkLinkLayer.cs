@@ -6,7 +6,5 @@ namespace PollingTcp.Common
     {
         int MaxWindowSize { get; }
         void Send(byte[] bytesToSend);
-
-        event EventHandler<DataReceivedEventArgs> DataReceived;
     }
 }

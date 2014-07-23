@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 
 using System.Runtime.Serialization.Formatters.Binary;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using PollingTcp.Client;
-using PollingTcp.Common;
 using PollingTcp.Shared;
+using PollingTcp.Tests.Helper;
 
 namespace PollingTcp.Tests
 {
@@ -18,14 +17,13 @@ namespace PollingTcp.Tests
         [ExpectedException(typeof(Exception))]
         public void InitializeClient_WithNoLinkLayer_ShoulThrowAnException()
         {
-            var client = new TestPollingTcpClient(null);
-            client.Connect();
+            var client = new TestPollingTcpClient(null); 
         }
 
         [TestMethod]
         public void ReadyClient_WhenConnecting_ShouldRaiseConnectingStateViaEvent()
         {
-            var client = new TestPollingTcpClient(new DummyClientClientTransportLayer());
+            var client = new TestPollingTcpClient(new ClientTestNetworkLinkLayer());
 
             var numberOfConnectingEventsRaised = 0;
             client.ConnectionStateChanged += (sender, args) => numberOfConnectingEventsRaised += args.State == ConnectionState.Connecting ?  + 1 : 0;
@@ -40,7 +38,7 @@ namespace PollingTcp.Tests
         [ExpectedException(typeof(Exception))]
         public void ConnectingClient_WhenConnection_ShouldRaiseException()
         {
-            var client = new TestPollingTcpClient(new DummyClientClientTransportLayer());
+            var client = new TestPollingTcpClient(new ClientTestNetworkLinkLayer());
 
             client.Connect();
             client.Connect();
@@ -49,15 +47,15 @@ namespace PollingTcp.Tests
         [TestMethod]
         public void ReadyClient_WhenConnecting_SendAnEmptyClientId()
         {
-            var networkLayer = new DummyClientClientTransportLayer();
+            var networkLayer = new ClientTestNetworkLinkLayer();
 
             var client = new TestPollingTcpClient(networkLayer);
             
             client.Connect();
 
-            Assert.AreEqual(1, networkLayer.Captured.Count);
+            Assert.AreEqual(1, networkLayer.SentBytes.Count);
             
-            var sentFrameBytes = networkLayer.Captured[0];
+            var sentFrameBytes = networkLayer.SentBytes[0];
             var sentFrame = new GenericSerializer<ClientDataFrame>().Deserialze(sentFrameBytes);
 
             Assert.IsNotNull(sentFrame);
@@ -75,7 +73,7 @@ namespace PollingTcp.Tests
                 Payload = BitConverter.GetBytes(12345)
             };
 
-            var networkLayer = new DummyClientClientTransportLayer();
+            var networkLayer = new ClientTestNetworkLinkLayer();
 
             var client = new TestPollingTcpClient(networkLayer);
 
@@ -96,7 +94,7 @@ namespace PollingTcp.Tests
                 Payload = BitConverter.GetBytes(12345)
             };
 
-            var networkLayer = new DummyClientClientTransportLayer();
+            var networkLayer = new ClientTestNetworkLinkLayer();
 
             var client = new TestPollingTcpClient(networkLayer);
 
@@ -104,45 +102,6 @@ namespace PollingTcp.Tests
 
             networkLayer.Receive(new GenericSerializer<ServerDataFrame>().Serialize(connectionRequestResponse));
             client.Send(new ClientDataFrame());
-        }
-    }
-
-    class DummyClientClientTransportLayer : IClientNetworkLinkLayer
-    {
-        private readonly List<byte[]> captured = new List<byte[]>();
-        public int MaxWindowSize { get; set; }
-        public void Send(byte[] data)
-        {
-            this.captured.Add(data);
-        }
-
-        public List<byte[]> Captured
-        {
-            get { return this.captured; }
-        }
-
-        public event EventHandler<DataReceivedEventArgs> DataReceived;
-
-        protected virtual void OnDataReceived(DataReceivedEventArgs e)
-        {
-            EventHandler<DataReceivedEventArgs> handler = this.DataReceived;
-            if (handler != null) handler(this, e);
-        }
-
-        public void Receive(byte[] data)
-        {
-            this.OnDataReceived(new DataReceivedEventArgs()
-            {
-                Bytes = data
-            });
-        }
-
-        public void StartPolling()
-        {
-        }
-
-        public void StopPolling()
-        {
         }
     }
 
@@ -174,36 +133,4 @@ namespace PollingTcp.Tests
             return (TDataType)value;
         }
     }
-
-    class BinaryClientFrameEncoder : FrameEncoder<ClientDataFrame>
-    {
-        GenericSerializer<ClientDataFrame> serializer = new GenericSerializer<ClientDataFrame>(); 
-
-        public override ClientDataFrame Decode(byte[] bytes)
-        {
-            return serializer.Deserialze(bytes);
-        }
-
-        public override byte[] Encode(ClientDataFrame clientFrame)
-        {
-            return serializer.Serialize(clientFrame);
-        }
-    }
-
-    class BinaryServerFrameEncoder : FrameEncoder<ServerDataFrame>
-    {
-        GenericSerializer<ServerDataFrame> serializer = new GenericSerializer<ServerDataFrame>(); 
-
-        public override ServerDataFrame Decode(byte[] bytes)
-        {
-            return serializer.Deserialze(bytes);
-        }
-
-        public override byte[] Encode(ServerDataFrame clientFrame)
-        {
-            return serializer.Serialize(clientFrame);
-        }
-    }
-
-
 }

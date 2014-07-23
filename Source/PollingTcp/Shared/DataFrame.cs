@@ -5,19 +5,28 @@ namespace PollingTcp.Shared
     [Serializable]
     public class DataFrame
     {
-        public int SequenceId { get; set; }
-
         public byte[] Payload { get; set; }
     }
 
     [Serializable]
-    public class ServerDataFrame : DataFrame
+    public class SequencedDataFrame : DataFrame
     {
-        
+        public int SequenceId { get; set; }
     }
 
     [Serializable]
-    public class ClientDataFrame : DataFrame
+    public class ServerDataFrame : SequencedDataFrame
+    {
+    }
+
+    [Serializable]
+    public class ClientDataFrame : SequencedDataFrame
+    {
+        public int ClientId { get; set; }
+    }
+
+    [Serializable]
+    public class ClientPollFrame : DataFrame
     {
         public int ClientId { get; set; }
     }

@@ -48,18 +48,18 @@
     <Compile Include="Common\FrameReceivedEventArgs.cs" />
     <Compile Include="Client\IClientNetworkLinkLayer.cs" />
     <Compile Include="Common\INetworkLinkLayer.cs" />
+    <Compile Include="Common\IServerNetworkLinkLayer.cs" />
     <Compile Include="Common\TransportLinkLayer.cs" />
     <Compile Include="Client\PollingTcpClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Server\PollingTcpServer.cs" />
     <Compile Include="Shared\CollectionExtensions.cs" />
     <Compile Include="Shared\DataFrameBuffer.cs" />
     <Compile Include="Shared\DataFrame.cs" />
     <Compile Include="Shared\FrameBuffer.cs" />
     <Compile Include="Shared\FrameBlockReceivedEventArgs.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Server\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="PollingTcp.nuspec">
       <SubType>Designer</SubType>
