@@ -4,14 +4,14 @@ using PollingTcp.Shared;
 
 namespace PollingTcp.Common
 {
-    public class TransportLinkLayer<TSendDataType, TReceiveDataType>
-        where TSendDataType : SequencedDataFrame 
-        where TReceiveDataType : SequencedDataFrame
+    public class ClientTransportLinkLayer<TSendDataType, TReceiveDataType>
+        where TSendDataType : ClientDataFrame
+        where TReceiveDataType : ServerDataFrame
     {
         private readonly FrameEncoder<TSendDataType> encoder;
         private readonly FrameEncoder<TReceiveDataType> decoder;
         private readonly int maxSequenceValue;
-        private readonly INetworkLinkLayer networkLayer;
+        private readonly IClientNetworkLinkLayer networkLayer;
 
         private readonly FrameBuffer<TReceiveDataType> incomingBuffer;
         private int localSequenceNr;
@@ -25,7 +25,7 @@ namespace PollingTcp.Common
             if (handler != null) handler(this, e);
         }
 
-        public TransportLinkLayer(INetworkLinkLayer networkLayer, FrameEncoder<TSendDataType> encoder, FrameEncoder<TReceiveDataType> decoder, int maxSequenceValue)
+        public ClientTransportLinkLayer(IClientNetworkLinkLayer networkLayer, FrameEncoder<TSendDataType> encoder, FrameEncoder<TReceiveDataType> decoder, int maxSequenceValue)
         {
             this.networkLayer = networkLayer;
 
@@ -38,17 +38,12 @@ namespace PollingTcp.Common
 
             this.localSequenceNr = new Random((int) DateTime.UtcNow.Ticks).Next(1, maxSequenceValue);
 
-            var clientNetworkLinkLayer = this.networkLayer as IClientNetworkLinkLayer;
-            if (clientNetworkLinkLayer != null)
-            {
-                clientNetworkLinkLayer.DataReceived += this.NetworkLayerOnDataReceived;
-            }
+            this.networkLayer.DataReceived += this.NetworkLayerOnDataReceived;
         }
 
         private void NetworkLayerOnDataReceived(object sender, DataReceivedEventArgs dataReceivedEventArgs)
         {
             var decodedFrame = this.decoder.Decode(dataReceivedEventArgs.Bytes);
-
             this.incomingBuffer.Add(decodedFrame);
         }
 

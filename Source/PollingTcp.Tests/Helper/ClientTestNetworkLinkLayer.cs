@@ -34,7 +34,7 @@ namespace PollingTcp.Tests.Helper
             });
         }
 
-        public override List<byte[]> ReceivedByteses
+        public override List<byte[]> ReceivedBytes
         {
             get { return new List<byte[]>(this.receivedByteses); }
         }

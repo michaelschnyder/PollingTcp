@@ -1,9 +1,9 @@
 ﻿using PollingTcp.Common;
 using PollingTcp.Shared;
 
-namespace PollingTcp.Tests
+namespace PollingTcp.Tests.Helper
 {
-    class BinaryClientFrameEncoder : FrameEncoder<ClientDataFrame>
+    class BinaryClientDataFrameEncoder : FrameEncoder<ClientDataFrame>
     {
         GenericSerializer<ClientDataFrame> serializer = new GenericSerializer<ClientDataFrame>(); 
 

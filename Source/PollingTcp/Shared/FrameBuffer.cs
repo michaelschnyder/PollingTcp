@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace PollingTcp.Shared
 {
-    public class FrameBuffer<TDataFrameType> where TDataFrameType : SequencedDataFrame
+    public class FrameBuffer<TDataFrameType> where TDataFrameType : DataFrame, ISequencedDataFrame
     {
         private readonly int maxSequenceValue;
 

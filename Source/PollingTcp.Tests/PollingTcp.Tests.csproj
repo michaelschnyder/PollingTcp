@@ -50,16 +50,18 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="Helper\BinaryClientFrameEncoder.cs" />
+    <Compile Include="Helper\BinaryClientDataFrameEncoder - Copy.cs" />
+    <Compile Include="Helper\BinaryClientDataFrameEncoder.cs" />
     <Compile Include="Helper\BinaryServerFrameEncoder.cs" />
     <Compile Include="FrameBufferTests.cs" />
     <Compile Include="Helper\ClientTestNetworkLinkLayer.cs" />
-    <Compile Include="Helper\IServerNetworkLinkLayer.cs" />
+    <Compile Include="Helper\DataFrameBuffer.cs" />
     <Compile Include="Helper\ServerTestNetworkLinkLayer.cs" />
-    <Compile Include="PollingTcpClientTests.cs" />
-    <Compile Include="PollingTcpServerTests.cs" />
+    <Compile Include="PollingClientTests.cs" />
+    <Compile Include="PollingServerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Helper\TestNetworkLinkLayer.cs" />
+    <Compile Include="TestDataFrame.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PollingTcp\PollingTcp.csproj">

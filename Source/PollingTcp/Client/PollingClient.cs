@@ -4,12 +4,12 @@ using PollingTcp.Shared;
 
 namespace PollingTcp.Client
 {
-    public class PollingTcpClient<TClientDataFrameType, TServerDataFrameType> where TClientDataFrameType : ClientDataFrame, new() where TServerDataFrameType : ServerDataFrame
+    public class PollingClient<TClientDataFrameType, TServerDataFrameType> where TClientDataFrameType : ClientDataFrame, new() where TServerDataFrameType : ServerDataFrame
     {
         private ConnectionState connectionState;
 
         private readonly IClientNetworkLinkLayer networkLinkLayer;
-        private TransportLinkLayer<TClientDataFrameType, TServerDataFrameType> transportLayer;
+        private ClientTransportLinkLayer<TClientDataFrameType, TServerDataFrameType> transportLayer;
         private int clientId;
 
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
@@ -20,7 +20,7 @@ namespace PollingTcp.Client
             if (handler != null) handler(this, e);
         }
 
-        public PollingTcpClient(IClientNetworkLinkLayer clientNetworkLinkLayer, FrameEncoder<TClientDataFrameType> encoder, FrameEncoder<TServerDataFrameType> decoder, int maxSequenceValue)
+        public PollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer, FrameEncoder<TClientDataFrameType> encoder, FrameEncoder<TServerDataFrameType> decoder, int maxSequenceValue)
         {
             if (clientNetworkLinkLayer == null)
             {
@@ -28,7 +28,7 @@ namespace PollingTcp.Client
             }
 
             this.networkLinkLayer = clientNetworkLinkLayer;
-            this.transportLayer = new TransportLinkLayer<TClientDataFrameType, TServerDataFrameType>(clientNetworkLinkLayer, encoder, decoder, maxSequenceValue);
+            this.transportLayer = new ClientTransportLinkLayer<TClientDataFrameType, TServerDataFrameType>(clientNetworkLinkLayer, encoder, decoder, maxSequenceValue);
 
             this.transportLayer.FrameReceived += TransportLayerOnFrameReceived;
         }

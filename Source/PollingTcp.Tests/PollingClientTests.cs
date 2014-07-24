@@ -11,19 +11,19 @@ using PollingTcp.Tests.Helper;
 namespace PollingTcp.Tests
 {
     [TestClass]
-    public class PollingTcpClientTests
+    public class PollingClientTests
     {
         [TestMethod]
         [ExpectedException(typeof(Exception))]
         public void InitializeClient_WithNoLinkLayer_ShoulThrowAnException()
         {
-            var client = new TestPollingTcpClient(null); 
+            var client = new TestPollingClient(null); 
         }
 
         [TestMethod]
         public void ReadyClient_WhenConnecting_ShouldRaiseConnectingStateViaEvent()
         {
-            var client = new TestPollingTcpClient(new ClientTestNetworkLinkLayer());
+            var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
 
             var numberOfConnectingEventsRaised = 0;
             client.ConnectionStateChanged += (sender, args) => numberOfConnectingEventsRaised += args.State == ConnectionState.Connecting ?  + 1 : 0;
@@ -38,7 +38,7 @@ namespace PollingTcp.Tests
         [ExpectedException(typeof(Exception))]
         public void ConnectingClient_WhenConnection_ShouldRaiseException()
         {
-            var client = new TestPollingTcpClient(new ClientTestNetworkLinkLayer());
+            var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
 
             client.Connect();
             client.Connect();
@@ -49,7 +49,7 @@ namespace PollingTcp.Tests
         {
             var networkLayer = new ClientTestNetworkLinkLayer();
 
-            var client = new TestPollingTcpClient(networkLayer);
+            var client = new TestPollingClient(networkLayer);
             
             client.Connect();
 
@@ -75,7 +75,7 @@ namespace PollingTcp.Tests
 
             var networkLayer = new ClientTestNetworkLinkLayer();
 
-            var client = new TestPollingTcpClient(networkLayer);
+            var client = new TestPollingClient(networkLayer);
 
             client.Connect();
 
@@ -96,7 +96,7 @@ namespace PollingTcp.Tests
 
             var networkLayer = new ClientTestNetworkLinkLayer();
 
-            var client = new TestPollingTcpClient(networkLayer);
+            var client = new TestPollingClient(networkLayer);
 
             client.Connect();
 
@@ -105,9 +105,9 @@ namespace PollingTcp.Tests
         }
     }
 
-    class TestPollingTcpClient : PollingTcpClient<ClientDataFrame, ServerDataFrame>
+    class TestPollingClient : PollingClient<ClientDataFrame, ServerDataFrame>
     {
-        public TestPollingTcpClient(IClientNetworkLinkLayer clientNetworkLinkLayer) : base(clientNetworkLinkLayer, new BinaryClientFrameEncoder(), new BinaryServerFrameEncoder(), 10)
+        public TestPollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer) : base(clientNetworkLinkLayer, new BinaryClientDataFrameEncoder(), new BinaryServerFrameEncoder(), 10)
         {
 
         }

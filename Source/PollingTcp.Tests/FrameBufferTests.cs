@@ -2,6 +2,7 @@
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PollingTcp.Shared;
+using PollingTcp.Tests.Helper;
 
 namespace PollingTcp.Tests
 {
@@ -14,7 +15,7 @@ namespace PollingTcp.Tests
             var maxSequenceValue = 10;
             var receivedFrameId = 0;
 
-            var frame = new SequencedDataFrame { SequenceId = 5 };
+            var frame = new TestDataFrame { SequenceId = 5 };
 
             var buffer = new DataFrameBuffer(maxSequenceValue);
             buffer.FrameBlockReceived += (sender, args) => receivedFrameId = args.Data[0].SequenceId;
@@ -30,8 +31,8 @@ namespace PollingTcp.Tests
             var maxSequenceValue = 10;
             var receivedFrameId = 0;
 
-            var firstFrame = new SequencedDataFrame { SequenceId = 5 };
-            var secondFrame = new SequencedDataFrame { SequenceId = 6 };
+            var firstFrame = new TestDataFrame { SequenceId = 5 };
+            var secondFrame = new TestDataFrame { SequenceId = 6 };
 
             var cache = new DataFrameBuffer(maxSequenceValue);
             cache.FrameBlockReceived += (sender, args) => receivedFrameId = args.Data[0].SequenceId;
@@ -49,9 +50,9 @@ namespace PollingTcp.Tests
             var maxSequenceValue = 10;
             var receivedFrameId = 0;
 
-            var initialFrame = new SequencedDataFrame { SequenceId = 4 };
-            var firstFrame = new SequencedDataFrame { SequenceId = 5 };
-            var secondFrame = new SequencedDataFrame { SequenceId = 6 };
+            var initialFrame = new TestDataFrame { SequenceId = 4 };
+            var firstFrame = new TestDataFrame { SequenceId = 5 };
+            var secondFrame = new TestDataFrame { SequenceId = 6 };
 
             var buffer = new DataFrameBuffer(maxSequenceValue);
             buffer.FrameBlockReceived += (sender, args) => receivedFrameId = args.Data.Last().SequenceId;
@@ -72,7 +73,7 @@ namespace PollingTcp.Tests
             var maxSequenceValue = 10;
 
             var cache = new DataFrameBuffer(maxSequenceValue);
-            cache.Add(new SequencedDataFrame() { SequenceId = maxSequenceValue + 1});
+            cache.Add(new TestDataFrame() { SequenceId = maxSequenceValue + 1});
         }
 
         [TestMethod]
@@ -81,8 +82,8 @@ namespace PollingTcp.Tests
             var maxSequenceValue = 10;
             var receivedFrameId = 0;
 
-            var firstFrame = new SequencedDataFrame { SequenceId = 10 };
-            var secondFrame = new SequencedDataFrame { SequenceId = 0 };
+            var firstFrame = new TestDataFrame { SequenceId = 10 };
+            var secondFrame = new TestDataFrame { SequenceId = 0 };
 
             var buffer = new DataFrameBuffer(maxSequenceValue);
             buffer.FrameBlockReceived += (sender, args) => receivedFrameId = args.Data.Last().SequenceId;
@@ -100,9 +101,9 @@ namespace PollingTcp.Tests
             var maxSequenceValue = 10;
             var receivedFrameId = 0;
 
-            var initialFrame = new SequencedDataFrame { SequenceId = 9 };
-            var firstFrame = new SequencedDataFrame { SequenceId = 10 };
-            var secondFrame = new SequencedDataFrame { SequenceId = 0 };
+            var initialFrame = new TestDataFrame { SequenceId = 9 };
+            var firstFrame = new TestDataFrame { SequenceId = 10 };
+            var secondFrame = new TestDataFrame { SequenceId = 0 };
 
             var buffer = new DataFrameBuffer(maxSequenceValue);
             buffer.FrameBlockReceived += (sender, args) => receivedFrameId = args.Data.Last().SequenceId;

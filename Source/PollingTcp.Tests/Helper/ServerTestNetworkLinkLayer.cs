@@ -1,12 +1,31 @@
+using System;
 using System.Collections.Generic;
 
 namespace PollingTcp.Tests.Helper
 {
-    class ServerTestNetworkLinkLayer : TestNetworkLinkLayer, IServerNetworkLinkLayer
+    class ServerTestNetworkLinkLayer : IServerNetworkLinkLayer
     {
-        public override List<byte[]> ReceivedByteses
+        public int MaxWindowSize { get; private set; }
+        public Func<byte[], byte[]> PollHandler { get; set; }
+
+        public List<byte[]> SentBytes { get; set; }
+
+        public ServerTestNetworkLinkLayer()
         {
-            get { return new List<byte[]>(); }
+            this.SentBytes = new List<byte[]>();
+        }
+
+        public void Receive(byte[] data)
+        {
+            if (this.PollHandler != null)
+            {
+                var response = this.PollHandler(data);
+
+                if (response != null)
+                {
+                    this.SentBytes.Add(response);
+                }
+            }
         }
     }
 }
