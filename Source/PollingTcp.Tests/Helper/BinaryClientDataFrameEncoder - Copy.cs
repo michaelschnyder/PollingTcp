@@ -3,16 +3,16 @@ using PollingTcp.Shared;
 
 namespace PollingTcp.Tests.Helper
 {
-    class BinaryClientFrameEncoder : FrameEncoder<ClientFrame>
+    class BinaryClientControlFrameEncoder : FrameEncoder<ClientControlFrame>
     {
-        GenericSerializer<ClientFrame> serializer = new GenericSerializer<ClientFrame>(); 
+        GenericSerializer<ClientControlFrame> serializer = new GenericSerializer<ClientControlFrame>();
 
-        public override ClientFrame Decode(byte[] bytes)
+        public override ClientControlFrame Decode(byte[] bytes)
         {
             return this.serializer.Deserialze(bytes);
         }
 
-        public override byte[] Encode(ClientFrame clientFrame)
+        public override byte[] Encode(ClientControlFrame clientFrame)
         {
             return this.serializer.Serialize(clientFrame);
         }

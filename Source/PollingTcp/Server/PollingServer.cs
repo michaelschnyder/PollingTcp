@@ -6,10 +6,13 @@ using PollingTcp.Tests.Helper;
 
 namespace PollingTcp.Server
 {
-    public class PollingServer<TClientFrameType, TClientDataFrameType, TServerDataFrameType> where TClientFrameType : ClientFrame where TServerDataFrameType : ServerDataFrame, new() where TClientDataFrameType : ClientDataFrame, ISequencedDataFrame
+    public class PollingServer<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> 
+        where TClientControlFrameType : ClientControlFrame
+        where TClientDataFrameType : ClientDataFrame, ISequencedDataFrame
+        where TServerDataFrameType : ServerDataFrame, new()
     {
         private readonly IServerNetworkLinkLayer networkLinkLayer;
-        private readonly FrameEncoder<TClientFrameType> encoder;
+        private readonly FrameEncoder<TClientDataFrameType> encoder;
         private readonly FrameEncoder<TServerDataFrameType> decoder;
 
         private readonly int maxIncomingSequenceValue;
@@ -18,7 +21,7 @@ namespace PollingTcp.Server
 
         private ConcurrentBag<ClientSession<TClientDataFrameType, TServerDataFrameType>> clientSessions = new ConcurrentBag<ClientSession<TClientDataFrameType, TServerDataFrameType>>(); 
 
-        public PollingServer(IServerNetworkLinkLayer networkLinkLayer, FrameEncoder<TClientFrameType> encoder, FrameEncoder<TServerDataFrameType> decoder, int maxIncomingSequenceValue, int maxOutgoingSequenceValue)
+        public PollingServer(IServerNetworkLinkLayer networkLinkLayer, FrameEncoder<TClientControlFrameType> controlEncoder, FrameEncoder<TClientDataFrameType> encoder, FrameEncoder<TServerDataFrameType> decoder, int maxIncomingSequenceValue, int maxOutgoingSequenceValue)
         {
             this.networkLinkLayer = networkLinkLayer;
             this.encoder = encoder;
@@ -149,7 +152,7 @@ namespace PollingTcp.Server
 
         public TServerDataFrameType HandleClientFrame(ClientFrame clientFrame)
         {
-            var pollingFrame = (ClientPollFrame) clientFrame;
+            var pollingFrame = (ClientControlFrame) clientFrame;
 
             if (pollingFrame != null)
             {

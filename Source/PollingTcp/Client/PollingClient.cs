@@ -4,11 +4,15 @@ using PollingTcp.Shared;
 
 namespace PollingTcp.Client
 {
-    public class PollingClient<TClientDataFrameType, TServerDataFrameType> where TClientDataFrameType : ClientDataFrame, new() where TServerDataFrameType : ServerDataFrame
+    public class PollingClient<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType>
+        where TClientControlFrameType : ClientControlFrame, new()
+        where TClientDataFrameType : ClientDataFrame, new() 
+        where TServerDataFrameType : ServerDataFrame
     {
         private ConnectionState connectionState;
 
         private readonly IClientNetworkLinkLayer networkLinkLayer;
+        private readonly FrameEncoder<TClientControlFrameType> controlEncoder;
         private ClientTransportLinkLayer<TClientDataFrameType, TServerDataFrameType> transportLayer;
         private int clientId;
 
@@ -20,7 +24,7 @@ namespace PollingTcp.Client
             if (handler != null) handler(this, e);
         }
 
-        public PollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer, FrameEncoder<TClientDataFrameType> encoder, FrameEncoder<TServerDataFrameType> decoder, int maxSequenceValue)
+        public PollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer, FrameEncoder<TClientControlFrameType> controlEncoder, FrameEncoder<TClientDataFrameType> dataEncoder, FrameEncoder<TServerDataFrameType> decoder, int maxSequenceValue)
         {
             if (clientNetworkLinkLayer == null)
             {
@@ -28,7 +32,8 @@ namespace PollingTcp.Client
             }
 
             this.networkLinkLayer = clientNetworkLinkLayer;
-            this.transportLayer = new ClientTransportLinkLayer<TClientDataFrameType, TServerDataFrameType>(clientNetworkLinkLayer, encoder, decoder, maxSequenceValue);
+            this.controlEncoder = controlEncoder;
+            this.transportLayer = new ClientTransportLinkLayer<TClientDataFrameType, TServerDataFrameType>(clientNetworkLinkLayer, dataEncoder, decoder, maxSequenceValue);
 
             this.transportLayer.FrameReceived += TransportLayerOnFrameReceived;
         }

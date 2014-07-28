@@ -32,7 +32,7 @@ namespace PollingTcp.Shared
     }
 
     [Serializable]
-    public class ClientPollFrame : ClientFrame
+    public class ClientControlFrame : ClientFrame
     {
     }
 }

@@ -105,9 +105,9 @@ namespace PollingTcp.Tests
         }
     }
 
-    class TestPollingClient : PollingClient<ClientDataFrame, ServerDataFrame>
+    class TestPollingClient : PollingClient<ClientControlFrame, ClientDataFrame, ServerDataFrame>
     {
-        public TestPollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer) : base(clientNetworkLinkLayer, new BinaryClientDataFrameEncoder(), new BinaryServerFrameEncoder(), 10)
+        public TestPollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer) : base(clientNetworkLinkLayer, new BinaryClientControlFrameEncoder(), new BinaryClientDataFrameEncoder(), new BinaryServerFrameEncoder(), 10)
         {
 
         }

@@ -17,7 +17,7 @@ namespace PollingTcp.Tests
         {
             
             var networkLayer = new ServerTestNetworkLinkLayer();
-            var server = new PollingServer<ClientFrame, ClientDataFrame, ServerDataFrame>(networkLayer, new BinaryClientFrameEncoder(), new BinaryServerFrameEncoder(), 10, 10);
+            var server = new PollingServer<ClientControlFrame, ClientDataFrame, ServerDataFrame>(networkLayer, new BinaryClientControlFrameEncoder(), new BinaryClientDataFrameEncoder(), new BinaryServerFrameEncoder(), 10, 10);
 
             server.Start();
 
