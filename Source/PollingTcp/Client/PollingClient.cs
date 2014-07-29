@@ -12,8 +12,10 @@ namespace PollingTcp.Client
         private ConnectionState connectionState;
 
         private readonly IClientNetworkLinkLayer networkLinkLayer;
-        private readonly FrameEncoder<TClientControlFrameType> controlEncoder;
-        private ClientTransportLinkLayer<TClientDataFrameType, TServerDataFrameType> transportLayer;
+        private readonly IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> clientEncoder;
+        private readonly FrameEncoder<TClientDataFrameType> dataEncoder;
+
+        private readonly ClientTransportLayer<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> transportLayer;
         private int clientId;
 
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
@@ -24,7 +26,7 @@ namespace PollingTcp.Client
             if (handler != null) handler(this, e);
         }
 
-        public PollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer, FrameEncoder<TClientControlFrameType> controlEncoder, FrameEncoder<TClientDataFrameType> dataEncoder, FrameEncoder<TServerDataFrameType> decoder, int maxSequenceValue)
+        public PollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer, IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> clientEncoder, FrameEncoder<TServerDataFrameType> serverDecoder, int maxSequenceValue)
         {
             if (clientNetworkLinkLayer == null)
             {
@@ -32,8 +34,8 @@ namespace PollingTcp.Client
             }
 
             this.networkLinkLayer = clientNetworkLinkLayer;
-            this.controlEncoder = controlEncoder;
-            this.transportLayer = new ClientTransportLinkLayer<TClientDataFrameType, TServerDataFrameType>(clientNetworkLinkLayer, dataEncoder, decoder, maxSequenceValue);
+            this.clientEncoder = clientEncoder;
+            this.transportLayer = new ClientTransportLayer<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType>(clientNetworkLinkLayer, clientEncoder, serverDecoder, maxSequenceValue);
 
             this.transportLayer.FrameReceived += TransportLayerOnFrameReceived;
         }

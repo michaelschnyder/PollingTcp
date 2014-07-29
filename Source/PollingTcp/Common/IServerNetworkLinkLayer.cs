@@ -1,7 +1,6 @@
 using System;
-using PollingTcp.Common;
 
-namespace PollingTcp.Tests.Helper
+namespace PollingTcp.Common
 {
     public interface IServerNetworkLinkLayer : INetworkLinkLayer
     {

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using PollingTcp.Client;
 using PollingTcp.Common;
 using PollingTcp.Shared;
-using PollingTcp.Tests.Helper;
 
 namespace PollingTcp.Server
 {
@@ -12,17 +12,24 @@ namespace PollingTcp.Server
         where TServerDataFrameType : ServerDataFrame, new()
     {
         private readonly IServerNetworkLinkLayer networkLinkLayer;
-        private readonly FrameEncoder<TClientDataFrameType> encoder;
+        private readonly IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> encoder;
         private readonly FrameEncoder<TServerDataFrameType> decoder;
 
         private readonly int maxIncomingSequenceValue;
         private readonly int maxOutgoingSequenceValue;
         private bool handleConnectionRequests;
 
-        private ConcurrentBag<ClientSession<TClientDataFrameType, TServerDataFrameType>> clientSessions = new ConcurrentBag<ClientSession<TClientDataFrameType, TServerDataFrameType>>(); 
+        private readonly ConcurrentBag<ClientSession<TClientDataFrameType, TServerDataFrameType>> clientSessions = new ConcurrentBag<ClientSession<TClientDataFrameType, TServerDataFrameType>>(); 
 
-        public PollingServer(IServerNetworkLinkLayer networkLinkLayer, FrameEncoder<TClientControlFrameType> controlEncoder, FrameEncoder<TClientDataFrameType> encoder, FrameEncoder<TServerDataFrameType> decoder, int maxIncomingSequenceValue, int maxOutgoingSequenceValue)
+        private readonly BlockingCollection<ClientSession<TClientDataFrameType, TServerDataFrameType>> connectionRequests = new BlockingCollection<ClientSession<TClientDataFrameType, TServerDataFrameType>>(); 
+
+        public PollingServer(IServerNetworkLinkLayer networkLinkLayer, IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> encoder, FrameEncoder<TServerDataFrameType> decoder, int maxIncomingSequenceValue, int maxOutgoingSequenceValue)
         {
+            if (networkLinkLayer == null)
+            {
+                throw new Exception("Network Link Layer is not set!");
+            }
+
             this.networkLinkLayer = networkLinkLayer;
             this.encoder = encoder;
             this.decoder = decoder;
@@ -70,6 +77,8 @@ namespace PollingTcp.Server
             var clientSession = new ClientSession<TClientDataFrameType, TServerDataFrameType>(clientId, this.maxIncomingSequenceValue, this.maxOutgoingSequenceValue);
             this.clientSessions.Add(clientSession);
 
+            this.connectionRequests.Add(clientSession);
+
             var acceptResponse = clientSession.CreateAcceptResponse();
             return acceptResponse;
         }
@@ -88,78 +97,14 @@ namespace PollingTcp.Server
         {
             this.handleConnectionRequests = true;
 
-            return null;
-        }
-    }
+            ClientSession<TClientDataFrameType, TServerDataFrameType> clientSession = null;
 
-    public class ClientSession<TClientDataFrameType, TServerDataFrameType>
-        where TClientDataFrameType : ClientFrame, ISequencedDataFrame where TServerDataFrameType : ServerDataFrame, new()
-    {
-        private int clientId;
-        private readonly int maxOutgoingSequenceNr;
-        private readonly int maxIncomingSequenceNr;
-        private int currentLocalSequenceNr;
-
-        private object sequenceNrLock = new object();
-        private FrameBuffer<TClientDataFrameType> frameBuffer;
-
-        public int ClientId
-        {
-            get { return this.clientId; }
-            set { this.clientId = value; }
-        }
-
-        public int CurrentLocalSequenceNr
-        {
-            get { return this.currentLocalSequenceNr; }
-        }
-
-        public ClientSession(int clientId, int maxIncomingSequenceNr, int maxOutgoingSequenceNr)
-        {
-            this.clientId = clientId;
-            this.maxOutgoingSequenceNr = maxOutgoingSequenceNr;
-            this.maxIncomingSequenceNr = maxIncomingSequenceNr;
-            this.currentLocalSequenceNr = new Random((int)DateTime.Now.Ticks).Next(0, this.maxOutgoingSequenceNr);
-
-            this.frameBuffer = new FrameBuffer<TClientDataFrameType>(maxIncomingSequenceNr);
-        }
-
-        public TServerDataFrameType CreateAcceptResponse()
-        {
-            var response = new TServerDataFrameType
+            while (clientSession == null)
             {
-                Payload = BitConverter.GetBytes(this.ClientId)
-            };
-
-            return this.SetSequenceNr(response);
-        }
-
-        private TServerDataFrameType ProcessFrame(TClientDataFrameType clientFrame)
-        {
-            return null;
-        }
-
-        public TServerDataFrameType SetSequenceNr(TServerDataFrameType frame)
-        {
-            lock (this.sequenceNrLock)
-            {
-                frame.SequenceId = this.currentLocalSequenceNr;
-                this.currentLocalSequenceNr = this.currentLocalSequenceNr < this.maxOutgoingSequenceNr ? this.currentLocalSequenceNr + 1 : 0;
+                this.connectionRequests.TryTake(out clientSession, 1000);
             }
 
-            return frame;
-        }
-
-        public TServerDataFrameType HandleClientFrame(ClientFrame clientFrame)
-        {
-            var pollingFrame = (ClientControlFrame) clientFrame;
-
-            if (pollingFrame != null)
-            {
-                
-            }
-
-            return null;
+            return clientSession;
         }
     }
 }

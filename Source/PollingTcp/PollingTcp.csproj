@@ -43,12 +43,13 @@
   <ItemGroup>
     <Compile Include="Client\ConnectionState.cs" />
     <Compile Include="Client\ConnectionStateChangedEventArgs.cs" />
+    <Compile Include="Client\IClientFrameEncoder.cs" />
     <Compile Include="Common\DataReceivedEventArgs.cs" />
     <Compile Include="Common\FrameEncoder.cs" />
     <Compile Include="Common\FrameReceivedEventArgs.cs" />
     <Compile Include="Client\IClientNetworkLinkLayer.cs" />
     <Compile Include="Common\INetworkLinkLayer.cs" />
-    <Compile Include="Common\ClientTransportLinkLayer.cs" />
+    <Compile Include="Common\ClientTransportLayer.cs" />
     <Compile Include="Client\PollingClient.cs" />
     <Compile Include="Common\IServerNetworkLinkLayer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

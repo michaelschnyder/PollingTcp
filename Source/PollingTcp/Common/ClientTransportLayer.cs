@@ -4,11 +4,12 @@ using PollingTcp.Shared;
 
 namespace PollingTcp.Common
 {
-    public class ClientTransportLinkLayer<TSendDataType, TReceiveDataType>
-        where TSendDataType : ClientDataFrame
+    public class ClientTransportLayer<TSendControlFrameType, TSendDataFrameType, TReceiveDataType>
+        where TSendControlFrameType : ClientControlFrame
+        where TSendDataFrameType : ClientDataFrame
         where TReceiveDataType : ServerDataFrame
     {
-        private readonly FrameEncoder<TSendDataType> encoder;
+        private readonly IClientFrameEncoder<TSendControlFrameType, TSendDataFrameType> encoder;
         private readonly FrameEncoder<TReceiveDataType> decoder;
         private readonly int maxSequenceValue;
         private readonly IClientNetworkLinkLayer networkLayer;
@@ -17,7 +18,6 @@ namespace PollingTcp.Common
         private int localSequenceNr;
 
         public event EventHandler<FrameReceivedEventArgs<TReceiveDataType>> FrameReceived;
-        public Func<TReceiveDataType, TSendDataType> ProcessFrame { get; set; }
 
         protected virtual void OnFrameReceived(FrameReceivedEventArgs<TReceiveDataType> e)
         {
@@ -25,7 +25,7 @@ namespace PollingTcp.Common
             if (handler != null) handler(this, e);
         }
 
-        public ClientTransportLinkLayer(IClientNetworkLinkLayer networkLayer, FrameEncoder<TSendDataType> encoder, FrameEncoder<TReceiveDataType> decoder, int maxSequenceValue)
+        public ClientTransportLayer(IClientNetworkLinkLayer networkLayer, IClientFrameEncoder<TSendControlFrameType, TSendDataFrameType> encoder, FrameEncoder<TReceiveDataType> decoder, int maxSequenceValue)
         {
             this.networkLayer = networkLayer;
 
@@ -69,10 +69,9 @@ namespace PollingTcp.Common
             }
         }
 
-        public void Send(TSendDataType sendFrame)
+        public void Send(TSendDataFrameType sendFrame)
         {
             // Set the sequenceId
-
             sendFrame.SequenceId = this.localSequenceNr;
             this.localSequenceNr++;
             if (this.localSequenceNr > this.maxSequenceValue)
@@ -85,5 +84,14 @@ namespace PollingTcp.Common
 
             this.networkLayer.Send(bytesToSend);
         }
+    
+        public void Send(TSendControlFrameType sendFrame)
+        {
+            // Encode the packet
+            var bytesToSend = this.encoder.Encode(sendFrame);
+
+            this.networkLayer.Send(bytesToSend);
+        }
     }
+
 }

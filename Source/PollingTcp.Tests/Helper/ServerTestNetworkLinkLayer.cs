@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PollingTcp.Common;
 
 namespace PollingTcp.Tests.Helper
 {
