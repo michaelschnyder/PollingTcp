@@ -33,6 +33,7 @@
     <WarningLevel>4</WarningLevel>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <Prefer32Bit>false</Prefer32Bit>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -52,9 +53,9 @@
     <Compile Include="Common\FrameReceivedEventArgs.cs" />
     <Compile Include="Client\IClientNetworkLinkLayer.cs" />
     <Compile Include="Common\INetworkLinkLayer.cs" />
-    <Compile Include="Common\ClientTransportLayer.cs" />
+    <Compile Include="Client\ClientTransportLayer.cs" />
     <Compile Include="Client\PollingClient.cs" />
-    <Compile Include="Common\IServerNetworkLinkLayer.cs" />
+    <Compile Include="Server\IServerNetworkLinkLayer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Server\ClientSession.cs">
       <SubType>Code</SubType>

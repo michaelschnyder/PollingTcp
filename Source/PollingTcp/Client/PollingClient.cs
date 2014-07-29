@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Globalization;
+using System.Threading;
+using System.Threading.Tasks;
 using PollingTcp.Common;
 using PollingTcp.Shared;
 
@@ -13,12 +16,23 @@ namespace PollingTcp.Client
 
         private readonly IClientNetworkLinkLayer networkLinkLayer;
         private readonly IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> clientEncoder;
-        private readonly FrameEncoder<TClientDataFrameType> dataEncoder;
 
         private readonly ClientTransportLayer<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> transportLayer;
         private int clientId;
 
+        private AutoResetEvent connectedEvent = new AutoResetEvent(false);
+        private TimeSpan connectionEstablishTimeout = TimeSpan.FromMilliseconds(5000);
+
+        private bool expectConnectionEstablishement = false;
+
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
+
+        public TimeSpan ConnectionEstablishTimeout
+        {
+            get { return this.connectionEstablishTimeout; }
+            set { this.connectionEstablishTimeout = value; }
+        }
+
 
         protected virtual void OnConnectionStateChanged(ConnectionStateChangedEventArgs e)
         {
@@ -42,12 +56,13 @@ namespace PollingTcp.Client
 
         private void TransportLayerOnFrameReceived(object sender, FrameReceivedEventArgs<TServerDataFrameType> frameReceivedEventArgs)
         {
-            if (this.connectionState == ConnectionState.Connecting)
+            if (this.connectionState == ConnectionState.Connecting && this.expectConnectionEstablishement)
             {
                 var data = frameReceivedEventArgs.Frame.Payload;
 
                 this.clientId = BitConverter.ToInt32(data, 0);
 
+                connectedEvent.Set();
                 this.SetNewConnectionState(ConnectionState.Connected);
             }
         }
@@ -57,7 +72,7 @@ namespace PollingTcp.Client
             get { return this.connectionState; }
         }
 
-        public void Connect()
+        public Task<bool> ConnectAsync()
         {
             if (this.connectionState != ConnectionState.Disconnected)
             {
@@ -66,8 +81,28 @@ namespace PollingTcp.Client
 
             SetNewConnectionState(ConnectionState.Connecting);
 
+            this.expectConnectionEstablishement = true;
+
             // Send an empty DataFrame to initiate the connection
             this.transportLayer.Send(new TClientDataFrameType());
+
+            var ensureConnectedWithinTimeout = new Task<bool>(() =>
+            {
+                this.connectedEvent.WaitOne(this.ConnectionEstablishTimeout);
+
+                this.expectConnectionEstablishement = false;
+
+                if (this.connectionState != ConnectionState.Connected)
+                {
+                    this.SetNewConnectionState(ConnectionState.Disconnected);
+                }
+
+                return this.ConnectionState == ConnectionState.Connected;
+            });
+
+            ensureConnectedWithinTimeout.Start();
+
+            return ensureConnectedWithinTimeout;
         }
 
         public void Send(TClientDataFrameType frame)

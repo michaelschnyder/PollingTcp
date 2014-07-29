@@ -1,8 +1,8 @@
 ﻿using System;
-using PollingTcp.Client;
+using PollingTcp.Common;
 using PollingTcp.Shared;
 
-namespace PollingTcp.Common
+namespace PollingTcp.Client
 {
     public class ClientTransportLayer<TSendControlFrameType, TSendDataFrameType, TReceiveDataType>
         where TSendControlFrameType : ClientControlFrame
@@ -43,7 +43,7 @@ namespace PollingTcp.Common
 
         private void NetworkLayerOnDataReceived(object sender, DataReceivedEventArgs dataReceivedEventArgs)
         {
-            var decodedFrame = this.decoder.Decode(dataReceivedEventArgs.Bytes);
+            var decodedFrame = this.decoder.Decode(dataReceivedEventArgs.Data);
             this.incomingBuffer.Add(decodedFrame);
         }
 
@@ -51,17 +51,6 @@ namespace PollingTcp.Common
         {
             foreach (var dataFrame in frameBlockReceivedEventArgs.Data)
             {
-                // Process via process method first
-                //if (this.ProcessFrame != null)
-                //{
-                //    var response = this.ProcessFrame(dataFrame);
-
-                //    if (response != null)
-                //    {
-                //        frameBlockReceivedEventArgs.ReturnValue = response;
-                //    }
-                //}
-
                 this.OnFrameReceived(new FrameReceivedEventArgs<TReceiveDataType>()
                 {
                     Frame = dataFrame

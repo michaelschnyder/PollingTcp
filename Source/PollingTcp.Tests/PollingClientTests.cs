@@ -28,7 +28,7 @@ namespace PollingTcp.Tests
             var numberOfConnectingEventsRaised = 0;
             client.ConnectionStateChanged += (sender, args) => numberOfConnectingEventsRaised += args.State == ConnectionState.Connecting ?  + 1 : 0;
 
-            client.Connect();
+            client.ConnectAsync();
 
             Assert.AreEqual(1, numberOfConnectingEventsRaised);        
             Assert.AreEqual(ConnectionState.Connecting, client.ConnectionState);
@@ -40,8 +40,19 @@ namespace PollingTcp.Tests
         {
             var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
 
-            client.Connect();
-            client.Connect();
+            client.ConnectAsync();
+            client.ConnectAsync();
+        }
+
+        [TestMethod]
+        public void ConnectingClient_WithNoResponse_ShouldGoBacktoDisconnectedState()
+        {
+            var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
+            
+            client.ConnectionEstablishTimeout = TimeSpan.FromMilliseconds(500);
+            client.ConnectAsync().Wait(client.ConnectionEstablishTimeout.Milliseconds * 2);
+
+            Assert.AreEqual(ConnectionState.Disconnected, client.ConnectionState);
         }
 
         [TestMethod]
@@ -51,7 +62,7 @@ namespace PollingTcp.Tests
 
             var client = new TestPollingClient(networkLayer);
             
-            client.Connect();
+            client.ConnectAsync();
 
             Assert.AreEqual(1, networkLayer.SentBytes.Count);
             
@@ -77,7 +88,7 @@ namespace PollingTcp.Tests
 
             var client = new TestPollingClient(networkLayer);
 
-            client.Connect();
+            client.ConnectAsync();
 
             byte[] data = new GenericSerializer<ServerDataFrame>().Serialize(connectionRequestResponse);
 
@@ -98,7 +109,7 @@ namespace PollingTcp.Tests
 
             var client = new TestPollingClient(networkLayer);
 
-            client.Connect();
+            client.ConnectAsync();
 
             networkLayer.Receive(new GenericSerializer<ServerDataFrame>().Serialize(connectionRequestResponse));
             client.Send(new ClientDataFrame());

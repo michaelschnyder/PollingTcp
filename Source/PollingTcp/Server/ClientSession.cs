@@ -63,7 +63,7 @@ namespace PollingTcp.Server
             this.queue.Enqueue(serverFrame);
         }
 
-        public TServerDataFrameType CreateAcceptResponse()
+        internal TServerDataFrameType CreateAcceptResponse()
         {
             var response = new TServerDataFrameType
             {
@@ -73,7 +73,7 @@ namespace PollingTcp.Server
             return this.SetSequenceNr(response);
         }
 
-        public TServerDataFrameType SetSequenceNr(TServerDataFrameType frame)
+        private TServerDataFrameType SetSequenceNr(TServerDataFrameType frame)
         {
             lock (this.sequenceNrLock)
             {
@@ -84,7 +84,7 @@ namespace PollingTcp.Server
             return frame;
         }
 
-        public TServerDataFrameType HandleClientFrame(ClientFrame clientFrame)
+        internal TServerDataFrameType HandleClientFrame(ClientFrame clientFrame)
         {
             var dataFrame = (TClientDataFrameType)clientFrame;
 

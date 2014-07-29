@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Threading;
+using System.Threading.Tasks;
 using PollingTcp.Client;
 using PollingTcp.Common;
 using PollingTcp.Shared;
 
 namespace PollingTcp.Server
 {
-    public class PollingServer<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> 
+    public class PollingServer<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> : IDisposable
         where TClientControlFrameType : ClientControlFrame
         where TClientDataFrameType : ClientDataFrame, ISequencedDataFrame
         where TServerDataFrameType : ServerDataFrame, new()
@@ -21,7 +23,8 @@ namespace PollingTcp.Server
 
         private readonly ConcurrentBag<ClientSession<TClientDataFrameType, TServerDataFrameType>> clientSessions = new ConcurrentBag<ClientSession<TClientDataFrameType, TServerDataFrameType>>(); 
 
-        private readonly BlockingCollection<ClientSession<TClientDataFrameType, TServerDataFrameType>> connectionRequests = new BlockingCollection<ClientSession<TClientDataFrameType, TServerDataFrameType>>(); 
+        private readonly BlockingCollection<ClientSession<TClientDataFrameType, TServerDataFrameType>> connectionRequests = new BlockingCollection<ClientSession<TClientDataFrameType, TServerDataFrameType>>();
+        private CancellationTokenSource cancellationToken;
 
         public PollingServer(IServerNetworkLinkLayer networkLinkLayer, IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> encoder, FrameEncoder<TServerDataFrameType> decoder, int maxIncomingSequenceValue, int maxOutgoingSequenceValue)
         {
@@ -33,6 +36,7 @@ namespace PollingTcp.Server
             this.networkLinkLayer = networkLinkLayer;
             this.encoder = encoder;
             this.decoder = decoder;
+
             this.maxOutgoingSequenceValue = maxOutgoingSequenceValue;
             this.maxIncomingSequenceValue = maxIncomingSequenceValue;
 
@@ -64,10 +68,8 @@ namespace PollingTcp.Server
             {
                 return this.decoder.Encode(response);
             }
-            else
-            {
-                return null;
-            }
+            
+            return null;
         }
 
         private TServerDataFrameType CreateNewClientSession()
@@ -90,7 +92,14 @@ namespace PollingTcp.Server
 
         public void Start()
         {
+            this.cancellationToken = new CancellationTokenSource();
+        }
 
+        public void Stop()
+        {
+            this.cancellationToken.Cancel(false);
+
+            this.handleConnectionRequests = false;
         }
 
         public ClientSession<TClientDataFrameType, TServerDataFrameType> Accept()
@@ -99,12 +108,34 @@ namespace PollingTcp.Server
 
             ClientSession<TClientDataFrameType, TServerDataFrameType> clientSession = null;
 
-            while (clientSession == null)
+            while (clientSession == null && !this.cancellationToken.IsCancellationRequested)
             {
                 this.connectionRequests.TryTake(out clientSession, 1000);
             }
 
             return clientSession;
+        }
+
+        public Task<ClientSession<TClientDataFrameType, TServerDataFrameType>> AcceptAsync()
+        {
+            Task<ClientSession<TClientDataFrameType, TServerDataFrameType>> task;
+                
+            task = new Task<ClientSession<TClientDataFrameType, TServerDataFrameType>>(this.Accept);
+
+            task.Start();
+
+            return task;
+        }
+
+        protected virtual void Dispose(bool cleanupBothManagedAndNativeResources)
+        {
+            this.connectionRequests.Dispose();
+        }
+
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

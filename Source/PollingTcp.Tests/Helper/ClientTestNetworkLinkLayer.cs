@@ -30,7 +30,7 @@ namespace PollingTcp.Tests.Helper
             
             this.OnDataReceived(new DataReceivedEventArgs()
             {
-                Bytes = data
+                Data = data
             });
         }
 
