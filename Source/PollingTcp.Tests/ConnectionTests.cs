@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PollingTcp.Client;
 using PollingTcp.Frame;
@@ -41,7 +43,7 @@ namespace PollingTcp.Tests
             var helloWorld = "Hello World!";
 
             var receivedMessagesOnClient = new List<string>();
-
+            var atLeastOneFrameReceivedOnClient = new AutoResetEvent(false);
             var networkLayer = new CombinedTestNetworkLayer();
 
             var client = new TestPollingClient(networkLayer);
@@ -50,28 +52,43 @@ namespace PollingTcp.Tests
             server.Start();
 
             var session = WaitForConnectionEstablishment(server, client);
-            client.FrameReceived += (sender, args) => receivedMessagesOnClient.Add(Encoding.UTF8.GetString(args.Frame.Payload));
+            client.FrameReceived += (sender, args) =>
+            {
+                receivedMessagesOnClient.Add(Encoding.UTF8.GetString(args.Frame.Payload));
+                atLeastOneFrameReceivedOnClient.Set();
+            };
 
             session.Send(new ServerDataFrame()
             {
                 Payload = Encoding.UTF8.GetBytes(helloWorld)
             });
 
+            atLeastOneFrameReceivedOnClient.WaitOne(1000);
+
             Assert.IsTrue(receivedMessagesOnClient.Any());
             Assert.AreEqual(helloWorld, receivedMessagesOnClient[0]);
-
         }
 
         private static ClientSession<ClientDataFrame, ServerDataFrame> WaitForConnectionEstablishment(TestPollingServer server, TestPollingClient client)
         {
+            var isSessionAccepted = new AutoResetEvent(false);
+
+            ClientSession<ClientDataFrame, ServerDataFrame> session = null;
             server.Start();
 
-            var sessionAcceptTask = server.AcceptAsync();
+            var task = new Task(() =>
+            {
+                session = server.Accept();
+                isSessionAccepted.Set();
+            });
 
-            client.ConnectAsync().Wait();
-            sessionAcceptTask.Wait();
+            task.Start();
 
-            var session = sessionAcceptTask.Result;
+            while (!isSessionAccepted.WaitOne(10))
+            {
+                client.ConnectAsync().Wait();
+
+            }
 
             Assert.AreEqual(ConnectionState.Connected, client.ConnectionState);
             Assert.IsNotNull(session);

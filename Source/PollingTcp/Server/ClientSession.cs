@@ -87,20 +87,10 @@ namespace PollingTcp.Server
 
         internal TServerDataFrameType HandleClientFrame(ClientFrame clientFrame)
         {
-            var dataFrame = (TClientDataFrameType)clientFrame;
-
-            if (dataFrame != null)
+            if (clientFrame is TClientDataFrameType)
             {
+                var dataFrame = (TClientDataFrameType)clientFrame;
                 this.frameBuffer.Add(dataFrame);
-            }
-            else
-            {
-                var controlFrame = (ClientControlFrame)clientFrame;
-
-                if (controlFrame != null)
-                {
-
-                }
             }
 
             TServerDataFrameType toSend = null;

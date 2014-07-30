@@ -152,11 +152,13 @@ namespace PollingTcp.Tests
             networkLayer.Receive(data);
 
             Assert.AreEqual(ConnectionState.Connected, client.ConnectionState);
+
+            client.DisconnectAsync().Wait(5000);
+
             var allSentControlFrames = networkLayer.SentBytes.Select(b => this.clientAnyFrameSerializer.Deserialze(b)).ToList();
 
             Assert.IsTrue(allSentControlFrames.Any());
             Assert.IsTrue(allSentControlFrames.OfType<ClientControlFrame>().Any());
-            client.DisconnectAsync();
         }
     }
 

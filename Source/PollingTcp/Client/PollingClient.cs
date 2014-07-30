@@ -127,7 +127,7 @@ namespace PollingTcp.Client
             return ensureConnectedWithinTimeout;
         }
 
-        public void DisconnectAsync()
+        public Task DisconnectAsync()
         {
             if (this.connectionState != ConnectionState.Connected && this.connectionState != ConnectionState.Connecting)
             {
@@ -139,7 +139,7 @@ namespace PollingTcp.Client
                 this.connectionState = ConnectionState.Disconnected;
             });
 
-            this.requestPool.StopAsync().ContinueWith(afterPoolShutdown);
+            return this.requestPool.StopAsync().ContinueWith(afterPoolShutdown);
         }
 
         public void Send(TClientDataFrameType frame)
