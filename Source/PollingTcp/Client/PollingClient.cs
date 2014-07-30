@@ -6,7 +6,7 @@ using PollingTcp.Frame;
 
 namespace PollingTcp.Client
 {
-    public class PollingClient<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType>
+    public class PollingClient<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> : IDisposable
         where TClientControlFrameType : ClientControlFrame, new()
         where TClientDataFrameType : ClientDataFrame, new() 
         where TServerDataFrameType : ServerDataFrame
@@ -128,7 +128,17 @@ namespace PollingTcp.Client
 
         public void DisconnectAsync()
         {
-            this.requestPool.Stop();
+            if (this.connectionState != ConnectionState.Connected && this.connectionState != ConnectionState.Connecting)
+            {
+                throw new Exception(string.Format("Illegal State to disconnect: {0}", this.connectionState));
+            }
+            
+            var afterPoolShutdown = new Action<Task>((o) =>
+            {
+                this.connectionState = ConnectionState.Disconnected;
+            });
+
+            this.requestPool.StopAsync().ContinueWith(afterPoolShutdown);
         }
 
         public void Send(TClientDataFrameType frame)
@@ -155,6 +165,19 @@ namespace PollingTcp.Client
                     State = this.connectionState
                 });
             }
+        }
+
+        protected virtual void Dispose(bool forceAll)
+        {
+            this.requestPool.StopAsync();
+            this.requestPool = null;
+        }
+
+        public void Dispose()
+        {
+            this.Dispose(true);
+
+            GC.SuppressFinalize(this);
         }
     }
 }

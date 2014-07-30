@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-
+using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -14,6 +14,11 @@ namespace PollingTcp.Tests
     [TestClass]
     public class PollingClientTests
     {
+        private GenericSerializer<ServerDataFrame> serverDataFrameSerializer = new GenericSerializer<ServerDataFrame>();
+        private GenericSerializer<ClientDataFrame> clientDataFrameSerializer = new GenericSerializer<ClientDataFrame>();
+        private GenericSerializer<ClientControlFrame> clientControlFrameSerializer = new GenericSerializer<ClientControlFrame>();
+        private GenericSerializer<ClientFrame> clientAnyFrameSerializer = new GenericSerializer<ClientFrame>();
+
         [TestMethod]
         [ExpectedException(typeof(Exception))]
         public void InitializeClient_WithNoLinkLayer_ShoulThrowAnException()
@@ -100,10 +105,12 @@ namespace PollingTcp.Tests
 
             client.ConnectAsync();
 
-            byte[] data = new GenericSerializer<ServerDataFrame>().Serialize(connectionRequestResponse);
+            byte[] data = this.serverDataFrameSerializer.Serialize(connectionRequestResponse);
 
             networkLayer.Receive(data);
             Assert.AreEqual(ConnectionState.Connected, client.ConnectionState);
+
+            client.DisconnectAsync();
         }
 
         [TestMethod]
@@ -121,8 +128,35 @@ namespace PollingTcp.Tests
 
             client.ConnectAsync();
 
-            networkLayer.Receive(new GenericSerializer<ServerDataFrame>().Serialize(connectionRequestResponse));
+            networkLayer.Receive(this.serverDataFrameSerializer.Serialize(connectionRequestResponse));
             client.Send(new ClientDataFrame());
+            client.DisconnectAsync();
+        }
+
+        [TestMethod]
+        public void ConnectedClient_WhenConnected_ShouldSendAControlFrameAtLeast()
+        {
+            var connectionRequestResponse = new ServerDataFrame()
+            {
+                SequenceId = 7,
+                Payload = BitConverter.GetBytes(12345)
+            };
+
+            var networkLayer = new ClientTestNetworkLinkLayer();
+
+            var client = new TestPollingClient(networkLayer);
+
+            client.ConnectAsync();
+
+            byte[] data = this.serverDataFrameSerializer.Serialize(connectionRequestResponse);
+            networkLayer.Receive(data);
+
+            Assert.AreEqual(ConnectionState.Connected, client.ConnectionState);
+            var allSentControlFrames = networkLayer.SentBytes.Select(b => this.clientAnyFrameSerializer.Deserialze(b)).ToList();
+
+            Assert.IsTrue(allSentControlFrames.Any());
+            Assert.IsTrue(allSentControlFrames.OfType<ClientControlFrame>().Any());
+            client.DisconnectAsync();
         }
     }
 

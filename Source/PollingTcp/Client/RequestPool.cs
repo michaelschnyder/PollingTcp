@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PollingTcp.Client
 {
-    public class RequestPool<TSendControlFrameType>
+    public class RequestPool<TSendControlFrameType> where TSendControlFrameType : new()
     {
         private readonly ISendControlFrame<TSendControlFrameType> transportLayer;
         List<RequestClient<TSendControlFrameType>> clients = new List<RequestClient<TSendControlFrameType>>();
@@ -20,24 +21,41 @@ namespace PollingTcp.Client
             set { this.maxClientsActive = value; }
         }
 
+        public int ActiveClients
+        {
+            get { return this.clients.Count; }
+        }
+
         public void Start()
         {
             for (int i = 0; i < this.MaxClientsActive; i++)
             {
                 var client = new RequestClient<TSendControlFrameType>(this.transportLayer);
                 client.Start();
+                this.clients.Add(client);
             }    
         }
 
-        public void Stop()
+        public async void Stop()
         {
-            var allClients = new List<RequestClient<TSendControlFrameType>>(this.clients);
+            await this.StopAsync();
+        }
 
-            foreach (var client in allClients)
+        public Task StopAsync()
+        {
+            var task = new Task(() =>
             {
-                client.Stop();
-                this.clients.Remove(client);
-            }
+                var allClients = new List<RequestClient<TSendControlFrameType>>(this.clients);
+
+                foreach (var client in allClients)
+                {
+                    client.Stop();
+                    this.clients.Remove(client);
+                }
+            });
+
+            task.Start();
+            return task;
         }
     }
 }
