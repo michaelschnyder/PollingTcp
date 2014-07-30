@@ -26,6 +26,7 @@ namespace PollingTcp.Server
 
         private readonly BlockingCollection<ClientSession<TClientDataFrameType, TServerDataFrameType>> connectionRequests = new BlockingCollection<ClientSession<TClientDataFrameType, TServerDataFrameType>>();
         private CancellationTokenSource cancellationToken;
+        private bool isStarted;
 
         public PollingServer(IServerNetworkLinkLayer networkLinkLayer, IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> encoder, FrameEncoder<TServerDataFrameType> decoder, int maxIncomingSequenceValue, int maxOutgoingSequenceValue)
         {
@@ -93,6 +94,7 @@ namespace PollingTcp.Server
 
         public void Start()
         {
+            this.isStarted = true;
             this.cancellationToken = new CancellationTokenSource();
         }
 
@@ -101,10 +103,17 @@ namespace PollingTcp.Server
             this.cancellationToken.Cancel(false);
 
             this.handleConnectionRequests = false;
+
+            this.isStarted = false;
         }
 
         public ClientSession<TClientDataFrameType, TServerDataFrameType> Accept()
         {
+            if (!this.isStarted)
+            {
+                throw new Exception("Server has to be started first!");
+            }
+
             this.handleConnectionRequests = true;
 
             ClientSession<TClientDataFrameType, TServerDataFrameType> clientSession = null;

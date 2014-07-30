@@ -53,6 +53,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="ConnectionTests.cs" />
     <Compile Include="Helper\BinaryClientFrameEncoder.cs" />
     <Compile Include="Helper\BinaryServerFrameEncoder.cs" />
     <Compile Include="FrameBufferTests.cs" />

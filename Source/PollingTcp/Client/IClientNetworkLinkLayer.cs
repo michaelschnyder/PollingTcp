@@ -8,9 +8,5 @@ namespace PollingTcp.Client
         void Send(byte[] bytesToSend);
 
         event EventHandler<DataReceivedEventArgs> DataReceived;
-
-        void StartPolling();
-
-        void StopPolling();
     }
 }

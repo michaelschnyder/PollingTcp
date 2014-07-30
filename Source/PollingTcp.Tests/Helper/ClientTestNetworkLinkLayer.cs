@@ -10,14 +10,6 @@ namespace PollingTcp.Tests.Helper
         private readonly List<byte[]> receivedByteses = new List<byte[]>();
         public event EventHandler<DataReceivedEventArgs> DataReceived;
 
-        public void StartPolling()
-        {
-        }
-
-        public void StopPolling()
-        {
-        }
-
         protected virtual void OnDataReceived(DataReceivedEventArgs e)
         {
             EventHandler<DataReceivedEventArgs> handler = this.DataReceived;
