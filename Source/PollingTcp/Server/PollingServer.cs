@@ -45,6 +45,11 @@ namespace PollingTcp.Server
             this.networkLinkLayer.PollHandler = this.NetworkLayerPollHandler;
         }
 
+        public int SessionCount
+        {
+            get { return this.clientSessions.Count; }
+        }
+
         private byte[] NetworkLayerPollHandler(byte[] arg)
         {
             var clientFrame = this.encoder.Decode(arg);

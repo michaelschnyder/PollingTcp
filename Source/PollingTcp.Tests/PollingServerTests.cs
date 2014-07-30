@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using PollingTcp.Client;
-using PollingTcp.Common;
 using PollingTcp.Frame;
 using PollingTcp.Server;
-using PollingTcp.Shared;
 using PollingTcp.Tests.Helper;
 
 namespace PollingTcp.Tests
@@ -28,7 +24,27 @@ namespace PollingTcp.Tests
         }
 
         [TestMethod]
-        public void FreshServer_ReceivesEmptyClientId_ShouldUnblockAcceptAndReturnSession()
+        [ExpectedException(typeof(Exception))]
+        public void NewServer_TryToAcceptSessionButDidNotStartYet_ShouldThrowAnException()
+        {
+            var networkLayer = new ServerTestNetworkLinkLayer();
+            var server = new TestPollingServer(networkLayer, 10, 10);
+
+            server.Accept();
+        }
+
+        [TestMethod]
+        public void NewServer_ReceivesConnectionRequest_NothingHappens()
+        {
+            var networkLayer = new ServerTestNetworkLinkLayer();
+            var server = new TestPollingServer(networkLayer, 10, 10);
+
+            networkLayer.Receive(new BinaryClientFrameEncoder().Encode(this.initConnectionFrame));
+            Assert.AreEqual(0, server.SessionCount);
+        }
+
+        [TestMethod]
+        public void StartedServer_ReceivesEmptyClientId_ShouldUnblockAcceptAndReturnSession()
         {
             var networkLayer = new ServerTestNetworkLinkLayer();
             var server = new TestPollingServer(networkLayer, 10, 10);
@@ -62,7 +78,7 @@ namespace PollingTcp.Tests
         }
 
         [TestMethod]
-        public void FreshServer_ReceivesEmptyClientId_ShouldResponseWithAClientId()
+        public void StartedServer_ReceivesEmptyClientId_ShouldResponseWithAClientId()
         {
             var networkLayer = new ServerTestNetworkLinkLayer();
             var server = new TestPollingServer(networkLayer, 10, 10);

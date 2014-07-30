@@ -12,7 +12,7 @@ namespace PollingTcp.Client
     {
         private readonly IClientFrameEncoder<TSendControlFrameType, TSendDataFrameType> encoder;
         private readonly FrameEncoder<TReceiveDataType> decoder;
-        private readonly int maxSequenceValue;
+        private readonly int maxClientSequenceValue;
         private readonly IClientNetworkLinkLayer networkLayer;
 
         private readonly FrameBuffer<TReceiveDataType> incomingBuffer;
@@ -26,18 +26,19 @@ namespace PollingTcp.Client
             if (handler != null) handler(this, e);
         }
 
-        public ClientTransportLayer(IClientNetworkLinkLayer networkLayer, IClientFrameEncoder<TSendControlFrameType, TSendDataFrameType> encoder, FrameEncoder<TReceiveDataType> decoder, int maxSequenceValue)
+        public ClientTransportLayer(IClientNetworkLinkLayer networkLayer, IClientFrameEncoder<TSendControlFrameType, TSendDataFrameType> encoder, FrameEncoder<TReceiveDataType> decoder, int maxClientSequenceValue, int maxServerSequenceValue)
         {
             this.networkLayer = networkLayer;
 
             this.encoder = encoder;
             this.decoder = decoder;
-            this.maxSequenceValue = maxSequenceValue;
 
-            this.incomingBuffer = new FrameBuffer<TReceiveDataType>(maxSequenceValue);
+            this.maxClientSequenceValue = maxClientSequenceValue;
+
+            this.incomingBuffer = new FrameBuffer<TReceiveDataType>(maxServerSequenceValue);
             this.incomingBuffer.FrameBlockReceived += this.IncomingBufferOnFrameBlockReceived;
 
-            this.localSequenceNr = new Random((int) DateTime.UtcNow.Ticks).Next(1, maxSequenceValue);
+            this.localSequenceNr = new Random((int) DateTime.UtcNow.Ticks).Next(1, maxClientSequenceValue);
 
             this.networkLayer.DataReceived += this.NetworkLayerOnDataReceived;
         }
@@ -64,7 +65,7 @@ namespace PollingTcp.Client
             // Set the sequenceId
             sendFrame.SequenceId = this.localSequenceNr;
             this.localSequenceNr++;
-            if (this.localSequenceNr > this.maxSequenceValue)
+            if (this.localSequenceNr > this.maxClientSequenceValue)
             {
                 this.localSequenceNr = 0;
             }

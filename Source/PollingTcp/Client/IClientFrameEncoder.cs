@@ -1,5 +1,4 @@
 ﻿using PollingTcp.Frame;
-using PollingTcp.Shared;
 
 namespace PollingTcp.Client
 {

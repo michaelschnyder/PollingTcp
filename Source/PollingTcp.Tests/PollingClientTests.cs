@@ -6,6 +6,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using PollingTcp.Client;
+using PollingTcp.Common;
 using PollingTcp.Frame;
 using PollingTcp.Shared;
 using PollingTcp.Tests.Helper;
@@ -21,14 +22,47 @@ namespace PollingTcp.Tests
         private GenericSerializer<ClientFrame> clientAnyFrameSerializer = new GenericSerializer<ClientFrame>();
 
         [TestMethod]
-        [ExpectedException(typeof(Exception))]
-        public void InitializeClient_WithNoLinkLayer_ShoulThrowAnException()
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void InitializeClient_WithNoLinkLayer_ShouldThrowAnException()
         {
-            var client = new TestPollingClient(null); 
+            var client = new TestPollingClient(null);
         }
 
         [TestMethod]
-        public void ReadyClient_WhenConnecting_ShouldRaiseConnectingViaEvent()
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void InitializeClient_WithNoProtocolSpecification_ShouldThrowAnException()
+        {
+            var client = new TestPollingClient(new ClientTestNetworkLinkLayer(), null);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void InitializeClient_WithEmptyClientEncoder_ShouldThrowAnException()
+        {
+            var specification = new TestProtocolSpecification()
+            {
+                ClientEncoder = null,
+                ServerEncoder = new BinaryServerFrameEncoder()
+            };
+
+            var client = new TestPollingClient(new ClientTestNetworkLinkLayer(), specification);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void InitializeClient_WithEmptyServerEncoder_ShouldThrowAnException()
+        {
+            var specification = new TestProtocolSpecification()
+            {
+                ClientEncoder = new BinaryClientFrameEncoder(),
+                ServerEncoder = null
+            };
+
+            var client = new TestPollingClient(new ClientTestNetworkLinkLayer(), specification);
+        }
+
+        [TestMethod]
+        public void ReadyClient_WhenConnecting_ShouldTriggerConnectingStateEvent()
         {
             var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
 
@@ -182,9 +216,30 @@ namespace PollingTcp.Tests
 
     class TestPollingClient : PollingClient<ClientControlFrame, ClientDataFrame, ServerDataFrame>
     {
-        public TestPollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer) : base(clientNetworkLinkLayer, new BinaryClientFrameEncoder(), new BinaryServerFrameEncoder(), 10)
+        public TestPollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer) : base(clientNetworkLinkLayer, new BinaryClientFrameEncoder(), new BinaryServerFrameEncoder(), 10, 10)
         {
 
+        }
+
+        public TestPollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer, IProtocolSpecification<ClientControlFrame, ClientDataFrame, ServerDataFrame> specification)
+            : base(clientNetworkLinkLayer, specification)
+        {
+
+        }
+
+    }
+
+    class TestProtocolSpecification : IProtocolSpecification<ClientControlFrame, ClientDataFrame, ServerDataFrame>
+    {
+        public IClientFrameEncoder<ClientControlFrame, ClientDataFrame> ClientEncoder { get; set; }
+        public FrameEncoder<ServerDataFrame> ServerEncoder { get; set; }
+        public int MaxClientSequenceValue { get; private set; }
+        public int MaxServerSequenceValue { get; private set; }
+
+        public TestProtocolSpecification()
+        {
+            this.MaxClientSequenceValue = 10;
+            this.MaxServerSequenceValue = 10;
         }
     }
 

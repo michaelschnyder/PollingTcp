@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using PollingTcp.Common;
 using PollingTcp.Frame;
+using PollingTcp.Shared;
 
 namespace PollingTcp.Client
 {
@@ -11,35 +12,29 @@ namespace PollingTcp.Client
         where TClientDataFrameType : ClientDataFrame, new() 
         where TServerDataFrameType : ServerDataFrame
     {
+        private readonly ClientTransportLayer<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> transportLayer;
+        private readonly IProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> protocolSpecification;
+
         private ConnectionState connectionState;
 
-        private readonly IClientNetworkLinkLayer networkLinkLayer;
-        private readonly IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> clientEncoder;
-
-        private readonly ClientTransportLayer<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> transportLayer;
         private int clientId;
 
         private readonly AutoResetEvent connectedEvent = new AutoResetEvent(false);
         private TimeSpan connectionEstablishTimeout = TimeSpan.FromMilliseconds(1000);
+        private bool expectConnectionEstablishement;
 
-
-        private bool expectConnectionEstablishement = false;
         private RequestPool<TClientControlFrameType> requestPool;
 
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
 
         public event EventHandler<FrameReceivedEventArgs<TServerDataFrameType>> FrameReceived;
 
+        #region Event Invocators
+
         protected virtual void OnFrameReceived(FrameReceivedEventArgs<TServerDataFrameType> e)
         {
             EventHandler<FrameReceivedEventArgs<TServerDataFrameType>> handler = this.FrameReceived;
             if (handler != null) handler(this, e);
-        }
-
-        public TimeSpan ConnectionEstablishTimeout
-        {
-            get { return this.connectionEstablishTimeout; }
-            set { this.connectionEstablishTimeout = value; }
         }
 
         protected virtual void OnConnectionStateChanged(ConnectionStateChangedEventArgs e)
@@ -48,21 +43,88 @@ namespace PollingTcp.Client
             if (handler != null) handler(this, e);
         }
 
-        public PollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer, IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> clientEncoder, FrameEncoder<TServerDataFrameType> serverDecoder, int maxSequenceValue)
+
+        #endregion
+
+        #region Properties
+
+        public TimeSpan ConnectionEstablishTimeout
+        {
+            get { return this.connectionEstablishTimeout; }
+            set { this.connectionEstablishTimeout = value; }
+        }
+
+        public IProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> Protocol
+        {
+            get { return this.protocolSpecification; }
+        }
+
+        public ConnectionState ConnectionState
+        {
+            get { return this.connectionState; }
+        }
+
+
+        #endregion
+
+        #region Constructor
+
+        public PollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer, IProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> specification)
         {
             if (clientNetworkLinkLayer == null)
             {
-                throw new Exception("Logical Link Layer is not set!");
+                throw new ArgumentNullException("clientNetworkLinkLayer", "Logical Link Layer is not set!");
             }
 
-            this.networkLinkLayer = clientNetworkLinkLayer;
-            this.clientEncoder = clientEncoder;
-            this.transportLayer = new ClientTransportLayer<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType>(clientNetworkLinkLayer, clientEncoder, serverDecoder, maxSequenceValue);
+            if (specification == null)
+            {
+                throw new ArgumentNullException("specification", "Protocol-Specification cannot be null!");
+            }
+
+            if (specification.ClientEncoder == null)
+            {
+                throw new ArgumentNullException("specification", string.Format("ClientEncoder must be provided for given ProtocolSpecification '{0}'", specification.GetType().Name));
+            }
+
+            if (specification.ServerEncoder == null)
+            {
+                throw new ArgumentNullException("specification", string.Format("ServerEncoder must be provided for given ProtocolSpecification '{0}'", specification.GetType().Name));
+            }
+
+            this.protocolSpecification = specification;
+
+            this.transportLayer = new ClientTransportLayer<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType>(
+                clientNetworkLinkLayer, 
+                specification.ClientEncoder, 
+                specification.ServerEncoder, 
+                specification.MaxClientSequenceValue,
+                specification.MaxServerSequenceValue);
 
             this.transportLayer.FrameReceived += TransportLayerOnFrameReceived;
 
             this.requestPool = new RequestPool<TClientControlFrameType>(this.transportLayer);
         }
+
+        public PollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer, IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> clientEncoder, FrameEncoder<TServerDataFrameType> serverEncoder)
+            : this(clientNetworkLinkLayer, new DefaultProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType>() {ClientEncoder = clientEncoder, ServerEncoder = serverEncoder})
+        {
+        }
+
+        public PollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer, IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> clientEncoder, FrameEncoder<TServerDataFrameType> serverEncoder, int maxClientSequenceValue,
+            int maxServerSequenceValue)
+            : this(
+                clientNetworkLinkLayer,
+                new DefaultProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType>()
+                {
+                    ClientEncoder = clientEncoder,
+                    ServerEncoder = serverEncoder,
+                    MaxClientSequenceValue = maxClientSequenceValue,
+                    MaxServerSequenceValue = maxServerSequenceValue
+                })
+        {
+        }
+
+        #endregion
 
         private void TransportLayerOnFrameReceived(object sender, FrameReceivedEventArgs<TServerDataFrameType> frameReceivedEventArgs)
         {
@@ -87,11 +149,6 @@ namespace PollingTcp.Client
                     Frame = frameReceivedEventArgs.Frame
                 });
             }
-        }
-
-        public ConnectionState ConnectionState
-        {
-            get { return this.connectionState; }
         }
 
         public Task<bool> ConnectAsync()

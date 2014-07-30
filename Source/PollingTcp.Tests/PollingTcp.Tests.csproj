@@ -65,7 +65,7 @@
     <Compile Include="PollingServerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Helper\TestNetworkLinkLayer.cs" />
-    <Compile Include="TestDataFrame.cs" />
+    <Compile Include="Helper\TestDataFrame.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PollingTcp\PollingTcp.csproj">

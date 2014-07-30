@@ -19,7 +19,6 @@ namespace PollingTcp.Tests
             var helloWorld = "Hello World!";
 
             var receivedMessagesInSession = new List<string>();
-            var receivedMessagesOnClient = new List<string>();
 
             var networkLayer = new CombinedTestNetworkLayer();
             
@@ -28,7 +27,6 @@ namespace PollingTcp.Tests
 
             var session = WaitForConnectionEstablishment(server, client);
 
-            client.FrameReceived += (sender, args) => receivedMessagesOnClient.Add(Encoding.UTF8.GetString(args.Frame.Payload));
             session.FrameReceived += (sender, args) => receivedMessagesInSession.Add(Encoding.UTF8.GetString(args.Frame.Payload));
 
             client.Send(new ClientDataFrame() { Payload = Encoding.UTF8.GetBytes(helloWorld)});
