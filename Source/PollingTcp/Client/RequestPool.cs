@@ -8,18 +8,17 @@ namespace PollingTcp.Client
     {
         private readonly ISendControlFrame<TSendControlFrameType> transportLayer;
         List<RequestClient<TSendControlFrameType>> clients = new List<RequestClient<TSendControlFrameType>>();
-        private int maxClientsActive;
+        private readonly int maxClientsActive;
 
         public RequestPool(ISendControlFrame<TSendControlFrameType> transportLayer)
         {
             this.transportLayer = transportLayer;
-            this.maxClientsActive = 1;
+            this.maxClientsActive = 4;
         }
 
         public int MaxClientsActive
         {
             get { return this.maxClientsActive; }
-            set { this.maxClientsActive = value; }
         }
 
         public int ActiveClients
