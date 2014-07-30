@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PollingTcp.Client;
-using PollingTcp.Common;
 using PollingTcp.Frame;
 using PollingTcp.Server;
 
@@ -13,7 +11,6 @@ namespace PollingTcp.Tests
     [TestClass]
     public class ConnectionTests
     {
-
         [TestMethod]
         public void ConnectionEstablished_SendDataFromClient_ShoudBeReceivedOnServer()
         {
@@ -27,21 +24,9 @@ namespace PollingTcp.Tests
             var client = new TestPollingClient(networkLayer);
             var server = new TestPollingServer(networkLayer, 10, 10);
 
+            var session = WaitForConnectionEstablishment(server, client);
+
             client.FrameReceived += (sender, args) => receivedMessagesOnClient.Add(Encoding.UTF8.GetString(args.Frame.Payload));
-            
-
-            server.Start();
-
-            var sessionAcceptTask = server.AcceptAsync();
-
-            client.ConnectAsync().Wait();
-            sessionAcceptTask.Wait();
-
-            var session = sessionAcceptTask.Result;
-            
-            Assert.AreEqual(ConnectionState.Connected, client.ConnectionState);
-            Assert.IsNotNull(session);
-
             session.FrameReceived += (sender, args) => receivedMessagesInSession.Add(Encoding.UTF8.GetString(args.Frame.Payload));
 
             client.Send(new ClientDataFrame() { Payload = Encoding.UTF8.GetBytes(helloWorld)});
@@ -50,38 +35,47 @@ namespace PollingTcp.Tests
             Assert.AreEqual(helloWorld, receivedMessagesInSession[0]);
         }
 
-    }
-
-    public class CombinedTestNetworkLayer : IClientNetworkLinkLayer, IServerNetworkLinkLayer
-    {
-        public int MaxWindowSize { get; private set; }
-        public void Send(byte[] bytesToSend)
+        [TestMethod]
+        public void ConnectionEstablished_SendDataFromServer_ShoudBeReceivedOnClient()
         {
-            // This is called by the client, so forward it to the server
-            var serverResult = this.PollHandler(bytesToSend);
+            var helloWorld = "Hello World!";
 
-            if (this.PollHandler == null)
-            {
-                return;
-            }
+            var receivedMessagesOnClient = new List<string>();
 
-            if (serverResult != null)
+            var networkLayer = new CombinedTestNetworkLayer();
+
+            var client = new TestPollingClient(networkLayer);
+            var server = new TestPollingServer(networkLayer, 10, 10);
+
+            server.Start();
+
+            var session = WaitForConnectionEstablishment(server, client);
+            client.FrameReceived += (sender, args) => receivedMessagesOnClient.Add(Encoding.UTF8.GetString(args.Frame.Payload));
+
+            session.Send(new ServerDataFrame()
             {
-                this.OnDataReceived(new DataReceivedEventArgs()
-                {
-                    Data = serverResult
-                });
-            }
+                Payload = Encoding.UTF8.GetBytes(helloWorld)
+            });
+
+            Assert.IsTrue(receivedMessagesOnClient.Any());
+            Assert.AreEqual(helloWorld, receivedMessagesOnClient[0]);
+
         }
 
-        public event EventHandler<DataReceivedEventArgs> DataReceived;
-
-        protected virtual void OnDataReceived(DataReceivedEventArgs e)
+        private static ClientSession<ClientDataFrame, ServerDataFrame> WaitForConnectionEstablishment(TestPollingServer server, TestPollingClient client)
         {
-            EventHandler<DataReceivedEventArgs> handler = this.DataReceived;
-            if (handler != null) handler(this, e);
-        }
+            server.Start();
 
-        public Func<byte[], byte[]> PollHandler { get; set; }
+            var sessionAcceptTask = server.AcceptAsync();
+
+            client.ConnectAsync().Wait();
+            sessionAcceptTask.Wait();
+
+            var session = sessionAcceptTask.Result;
+
+            Assert.AreEqual(ConnectionState.Connected, client.ConnectionState);
+            Assert.IsNotNull(session);
+            return session;
+        }
     }
 }

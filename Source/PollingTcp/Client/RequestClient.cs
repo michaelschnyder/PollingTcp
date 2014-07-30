@@ -4,18 +4,21 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using PollingTcp.Frame;
 
 namespace PollingTcp.Client
 {
-    public class RequestClient<TSendControlFrameType> where TSendControlFrameType: new()
+    public class RequestClient<TSendControlFrameType> where TSendControlFrameType: ClientControlFrame, new()
     {
         private readonly ISendControlFrame<TSendControlFrameType> transportLayer;
+        private readonly int clientId;
         private Thread workerThread;
         private bool shouldStop;
 
-        public RequestClient(ISendControlFrame<TSendControlFrameType> transportLayer)
+        public RequestClient(ISendControlFrame<TSendControlFrameType> transportLayer, int clientId)
         {
             this.transportLayer = transportLayer;
+            this.clientId = clientId;
             this.workerThread = new Thread(this.DoWork);
         }
 
@@ -25,7 +28,12 @@ namespace PollingTcp.Client
             {
                 while (!this.shouldStop)
                 {
-                    this.transportLayer.Send(new TSendControlFrameType());
+                    var controlFrame = new TSendControlFrameType
+                    {
+                        ClientId = this.clientId
+                    };
+
+                    this.transportLayer.Send(controlFrame);
                 }
             }
             catch (ThreadInterruptedException)

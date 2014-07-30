@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using PollingTcp.Frame;
 
 namespace PollingTcp.Client
 {
-    public class RequestPool<TSendControlFrameType> where TSendControlFrameType : new()
+    public class RequestPool<TSendControlFrameType> where TSendControlFrameType : ClientControlFrame, new()
     {
         private readonly ISendControlFrame<TSendControlFrameType> transportLayer;
         List<RequestClient<TSendControlFrameType>> clients = new List<RequestClient<TSendControlFrameType>>();
@@ -12,7 +13,7 @@ namespace PollingTcp.Client
         public RequestPool(ISendControlFrame<TSendControlFrameType> transportLayer)
         {
             this.transportLayer = transportLayer;
-            this.maxClientsActive = 5;
+            this.maxClientsActive = 1;
         }
 
         public int MaxClientsActive
@@ -26,11 +27,13 @@ namespace PollingTcp.Client
             get { return this.clients.Count; }
         }
 
+        public int ClientId { get; set; }
+
         public void Start()
         {
             for (int i = 0; i < this.MaxClientsActive; i++)
             {
-                var client = new RequestClient<TSendControlFrameType>(this.transportLayer);
+                var client = new RequestClient<TSendControlFrameType>(this.transportLayer, this.ClientId);
                 client.Start();
                 this.clients.Add(client);
             }    

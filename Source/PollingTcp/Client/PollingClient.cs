@@ -75,6 +75,7 @@ namespace PollingTcp.Client
                 connectedEvent.Set();
                 this.SetNewConnectionState(ConnectionState.Connected);
 
+                this.requestPool.ClientId = this.clientId;
                 this.requestPool.Start();
 
                 // Todo: Start timeout watcher
