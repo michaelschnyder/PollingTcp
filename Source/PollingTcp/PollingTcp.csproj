@@ -62,7 +62,7 @@
     </Compile>
     <Compile Include="Server\PollingServer.cs" />
     <Compile Include="Shared\CollectionExtensions.cs" />
-    <Compile Include="Shared\DataFrame.cs" />
+    <Compile Include="Frame\DataFrame.cs" />
     <Compile Include="Shared\FrameBuffer.cs" />
     <Compile Include="Shared\FrameBlockReceivedEventArgs.cs" />
   </ItemGroup>

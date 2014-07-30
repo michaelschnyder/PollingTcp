@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using PollingTcp.Common;
+using PollingTcp.Frame;
 using PollingTcp.Shared;
 
 namespace PollingTcp.Server

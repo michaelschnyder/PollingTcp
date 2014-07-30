@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PollingTcp.Client;
 using PollingTcp.Common;
+using PollingTcp.Frame;
 using PollingTcp.Server;
 using PollingTcp.Shared;
 using PollingTcp.Tests.Helper;

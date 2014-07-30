@@ -5,6 +5,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using PollingTcp.Client;
+using PollingTcp.Frame;
 using PollingTcp.Shared;
 using PollingTcp.Tests.Helper;
 
@@ -21,7 +22,7 @@ namespace PollingTcp.Tests
         }
 
         [TestMethod]
-        public void ReadyClient_WhenConnecting_ShouldRaiseConnectingStateViaEvent()
+        public void ReadyClient_WhenConnecting_ShouldRaiseConnectingViaEvent()
         {
             var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
 
@@ -32,6 +33,15 @@ namespace PollingTcp.Tests
 
             Assert.AreEqual(1, numberOfConnectingEventsRaised);        
             Assert.AreEqual(ConnectionState.Connecting, client.ConnectionState);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(Exception))]
+        public void ReadyClient_WhenTryToSend_RaiseException()
+        {
+            var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
+
+            client.Send(new ClientDataFrame());
         }
 
         [TestMethod]
@@ -49,8 +59,8 @@ namespace PollingTcp.Tests
         {
             var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
             
-            client.ConnectionEstablishTimeout = TimeSpan.FromMilliseconds(500);
-            client.ConnectAsync().Wait(client.ConnectionEstablishTimeout.Milliseconds * 2);
+            client.ConnectionEstablishTimeout = TimeSpan.FromMilliseconds(250);
+            client.ConnectAsync().Wait(client.ConnectionEstablishTimeout.Milliseconds * 10);
 
             Assert.AreEqual(ConnectionState.Disconnected, client.ConnectionState);
         }

@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using PollingTcp.Common;
-using PollingTcp.Shared;
+using PollingTcp.Frame;
 
 namespace PollingTcp.Client
 {
@@ -20,7 +19,7 @@ namespace PollingTcp.Client
         private readonly ClientTransportLayer<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> transportLayer;
         private int clientId;
 
-        private AutoResetEvent connectedEvent = new AutoResetEvent(false);
+        private readonly AutoResetEvent connectedEvent = new AutoResetEvent(false);
         private TimeSpan connectionEstablishTimeout = TimeSpan.FromMilliseconds(5000);
 
         private bool expectConnectionEstablishement = false;
@@ -32,7 +31,6 @@ namespace PollingTcp.Client
             get { return this.connectionEstablishTimeout; }
             set { this.connectionEstablishTimeout = value; }
         }
-
 
         protected virtual void OnConnectionStateChanged(ConnectionStateChangedEventArgs e)
         {
@@ -109,9 +107,11 @@ namespace PollingTcp.Client
         {
             if (this.ConnectionState != ConnectionState.Connected)
             {
-                frame.ClientId = this.clientId;
-                this.transportLayer.Send(frame);
+                throw new Exception("Illegal State. Not connected to server");
             }
+
+            frame.ClientId = this.clientId;
+            this.transportLayer.Send(frame);
         }
 
         private void SetNewConnectionState(ConnectionState state)

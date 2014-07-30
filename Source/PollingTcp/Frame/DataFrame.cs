@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PollingTcp.Shared
+namespace PollingTcp.Frame
 {
     [Serializable]
     public class DataFrame

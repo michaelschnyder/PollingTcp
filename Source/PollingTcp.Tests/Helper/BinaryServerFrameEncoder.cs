@@ -1,4 +1,5 @@
 using PollingTcp.Common;
+using PollingTcp.Frame;
 using PollingTcp.Shared;
 
 namespace PollingTcp.Tests

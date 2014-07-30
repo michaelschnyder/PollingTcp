@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using PollingTcp.Client;
 using PollingTcp.Common;
+using PollingTcp.Frame;
 using PollingTcp.Shared;
 
 namespace PollingTcp.Server
