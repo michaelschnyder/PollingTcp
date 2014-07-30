@@ -10,7 +10,7 @@ namespace PollingTcp.Client
     public class PollingClient<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> : IDisposable
         where TClientControlFrameType : ClientControlFrame, new()
         where TClientDataFrameType : ClientDataFrame, new() 
-        where TServerDataFrameType : ServerDataFrame
+        where TServerDataFrameType : ServerDataFrame, new()
     {
         private readonly ClientTransportLayer<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> transportLayer;
         private readonly IProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> protocolSpecification;
@@ -83,12 +83,12 @@ namespace PollingTcp.Client
 
             if (specification.ClientEncoder == null)
             {
-                throw new ArgumentNullException("specification", string.Format("ClientEncoder must be provided for given ProtocolSpecification '{0}'", specification.GetType().Name));
+                throw new ArgumentException("specification", string.Format("ClientEncoder must be provided for given specification '{0}'", specification.GetType().Name));
             }
 
             if (specification.ServerEncoder == null)
             {
-                throw new ArgumentNullException("specification", string.Format("ServerEncoder must be provided for given ProtocolSpecification '{0}'", specification.GetType().Name));
+                throw new ArgumentException("specification", string.Format("ServerEncoder must be provided for given specification '{0}'", specification.GetType().Name));
             }
 
             this.protocolSpecification = specification;

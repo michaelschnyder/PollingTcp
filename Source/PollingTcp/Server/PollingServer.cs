@@ -10,8 +10,8 @@ using PollingTcp.Shared;
 namespace PollingTcp.Server
 {
     public class PollingServer<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> : IDisposable
-        where TClientControlFrameType : ClientControlFrame
-        where TClientDataFrameType : ClientDataFrame, ISequencedDataFrame
+        where TClientControlFrameType : ClientControlFrame, new()
+        where TClientDataFrameType : ClientDataFrame, ISequencedDataFrame, new()
         where TServerDataFrameType : ServerDataFrame, new()
     {
         private readonly IServerNetworkLinkLayer networkLinkLayer;
@@ -28,30 +28,59 @@ namespace PollingTcp.Server
         private CancellationTokenSource cancellationToken;
         private bool isStarted;
 
-        public PollingServer(IServerNetworkLinkLayer networkLinkLayer, IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> encoder, FrameEncoder<TServerDataFrameType> decoder, int maxIncomingSequenceValue, int maxOutgoingSequenceValue)
-        {
-            if (networkLinkLayer == null)
-            {
-                throw new Exception("Network Link Layer is not set!");
-            }
-
-            this.networkLinkLayer = networkLinkLayer;
-            this.encoder = encoder;
-            this.decoder = decoder;
-
-            this.maxOutgoingSequenceValue = maxOutgoingSequenceValue;
-            this.maxIncomingSequenceValue = maxIncomingSequenceValue;
-
-            this.networkLinkLayer.PollHandler = this.NetworkLayerPollHandler;
-        }
+        private IProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> protocolSpecification;
 
         public int SessionCount
         {
             get { return this.clientSessions.Count; }
         }
 
+        public PollingServer(IServerNetworkLinkLayer networkLinkLayer, IProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> specification)
+        {
+            if (networkLinkLayer == null)
+            {
+                throw new ArgumentNullException("networkLinkLayer", "Logical Link Layer is not set!");
+            }
+
+            if (specification == null)
+            {
+                throw new ArgumentNullException("specification", "Protocol-Specification cannot be null!");
+            }
+
+            if (specification.ClientEncoder == null)
+            {
+                throw new ArgumentException("specification", string.Format("ClientEncoder must be provided for given ProtocolSpecification '{0}'", specification.GetType().Name));
+            }
+
+            if (specification.ServerEncoder == null)
+            {
+                throw new ArgumentException("specification", string.Format("ServerEncoder must be provided for given ProtocolSpecification '{0}'", specification.GetType().Name));
+            }
+
+            this.protocolSpecification = specification;
+
+            this.networkLinkLayer = networkLinkLayer;
+            this.encoder = specification.ClientEncoder;
+            this.decoder = specification.ServerEncoder;
+
+            this.maxOutgoingSequenceValue = specification.MaxServerSequenceValue;
+            this.maxIncomingSequenceValue = specification.MaxClientSequenceValue;
+
+            this.networkLinkLayer.PollHandler = this.NetworkLayerPollHandler;
+        }
+
+        public PollingServer(IServerNetworkLinkLayer networkLinkLayer, IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> encoder, FrameEncoder<TServerDataFrameType> decoder, int maxIncomingSequenceValue, int maxOutgoingSequenceValue)
+         : this(networkLinkLayer, new DefaultProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType>() { ClientEncoder = encoder, ServerEncoder = decoder, MaxClientSequenceValue = maxIncomingSequenceValue, MaxServerSequenceValue = maxOutgoingSequenceValue})
+        {
+        }
+
         private byte[] NetworkLayerPollHandler(byte[] arg)
         {
+            if (!this.isStarted)
+            {
+                return null;
+            }
+
             var clientFrame = this.encoder.Decode(arg);
             TServerDataFrameType response = null;
 

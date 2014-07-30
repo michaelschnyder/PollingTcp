@@ -7,7 +7,7 @@ namespace PollingTcp.Shared
     internal class DefaultProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> : IProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType>
         where TClientControlFrameType : ClientControlFrame, new()
         where TClientDataFrameType : ClientDataFrame, new()
-        where TServerDataFrameType : ServerDataFrame
+        where TServerDataFrameType : ServerDataFrame, new()
     {
         public IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> ClientEncoder { get; set; }
         public FrameEncoder<TServerDataFrameType> ServerEncoder { get; set; }

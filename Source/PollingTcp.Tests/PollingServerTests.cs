@@ -17,11 +17,45 @@ namespace PollingTcp.Tests
         private ClientDataFrame initConnectionFrame = new ClientDataFrame() { SequenceId = 7 };
 
         [TestMethod]
-        [ExpectedException(typeof(Exception))]
-        public void InitializeServer_WithtNoLinkLayer_ShouldRaiseException()
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void InitializeServer_WithoutLinkLayer_ShouldRaiseException()
         {
             var server = new TestPollingServer(null, 10, 10);
         }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void InitializeServer_WithoutProtocolSpecification_ShouldThrowAnException()
+        {
+            var client = new TestPollingServer(new ServerTestNetworkLinkLayer(), null);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void InitializeServer_WithEmptyClientEncoder_ShouldThrowAnException()
+        {
+            var specification = new TestProtocolSpecification()
+            {
+                ClientEncoder = null,
+                ServerEncoder = new BinaryServerFrameEncoder()
+            };
+
+            var server = new TestPollingServer(new ServerTestNetworkLinkLayer(), specification);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void InitializeServer_WithEmptyServerEncoder_ShouldThrowAnException()
+        {
+            var specification = new TestProtocolSpecification()
+            {
+                ClientEncoder = new BinaryClientFrameEncoder(),
+                ServerEncoder = null
+            };
+
+            var server = new TestPollingServer(new ServerTestNetworkLinkLayer(), specification);
+        }
+
 
         [TestMethod]
         [ExpectedException(typeof(Exception))]
@@ -144,6 +178,12 @@ namespace PollingTcp.Tests
         public TestPollingServer(IServerNetworkLinkLayer networkLinkLayer, int maxIncomingSequenceValue, int maxOutgoingSequenceValue) : 
             base(networkLinkLayer, new BinaryClientFrameEncoder(), new BinaryServerFrameEncoder(), maxIncomingSequenceValue, maxOutgoingSequenceValue)
         {
+        }
+
+        public TestPollingServer(IServerNetworkLinkLayer networkLinkLayer, TestProtocolSpecification specification)
+            : base(networkLinkLayer, specification)
+        {
+
         }
     }
 }

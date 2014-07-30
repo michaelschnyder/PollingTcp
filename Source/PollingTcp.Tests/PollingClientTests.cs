@@ -6,7 +6,6 @@ using System.Runtime.Serialization.Formatters.Binary;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using PollingTcp.Client;
-using PollingTcp.Common;
 using PollingTcp.Frame;
 using PollingTcp.Shared;
 using PollingTcp.Tests.Helper;
@@ -23,20 +22,20 @@ namespace PollingTcp.Tests
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
-        public void InitializeClient_WithNoLinkLayer_ShouldThrowAnException()
+        public void InitializeClient_WithoutLinkLayer_ShouldThrowAnException()
         {
             var client = new TestPollingClient(null);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
-        public void InitializeClient_WithNoProtocolSpecification_ShouldThrowAnException()
+        public void InitializeClient_WithoutProtocolSpecification_ShouldThrowAnException()
         {
             var client = new TestPollingClient(new ClientTestNetworkLinkLayer(), null);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [ExpectedException(typeof(ArgumentException))]
         public void InitializeClient_WithEmptyClientEncoder_ShouldThrowAnException()
         {
             var specification = new TestProtocolSpecification()
@@ -49,7 +48,7 @@ namespace PollingTcp.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [ExpectedException(typeof(ArgumentException))]
         public void InitializeClient_WithEmptyServerEncoder_ShouldThrowAnException()
         {
             var specification = new TestProtocolSpecification()
@@ -227,20 +226,6 @@ namespace PollingTcp.Tests
 
         }
 
-    }
-
-    class TestProtocolSpecification : IProtocolSpecification<ClientControlFrame, ClientDataFrame, ServerDataFrame>
-    {
-        public IClientFrameEncoder<ClientControlFrame, ClientDataFrame> ClientEncoder { get; set; }
-        public FrameEncoder<ServerDataFrame> ServerEncoder { get; set; }
-        public int MaxClientSequenceValue { get; private set; }
-        public int MaxServerSequenceValue { get; private set; }
-
-        public TestProtocolSpecification()
-        {
-            this.MaxClientSequenceValue = 10;
-            this.MaxServerSequenceValue = 10;
-        }
     }
 
     class GenericSerializer<TDataType>
