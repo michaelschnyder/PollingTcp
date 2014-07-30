@@ -5,7 +5,7 @@ using PollingTcp.Shared;
 
 namespace PollingTcp.Client
 {
-    public class ClientTransportLayer<TSendControlFrameType, TSendDataFrameType, TReceiveDataType>
+    public class ClientTransportLayer<TSendControlFrameType, TSendDataFrameType, TReceiveDataType> : ISendControlFrame<TSendControlFrameType>
         where TSendControlFrameType : ClientControlFrame
         where TSendDataFrameType : ClientDataFrame
         where TReceiveDataType : ServerDataFrame
@@ -84,4 +84,8 @@ namespace PollingTcp.Client
         }
     }
 
+    public interface ISendControlFrame<TSendControlFrameType>
+    {
+        void Send(TSendControlFrameType sendFrame);
+    }
 }

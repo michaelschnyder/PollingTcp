@@ -22,9 +22,19 @@ namespace PollingTcp.Client
         private readonly AutoResetEvent connectedEvent = new AutoResetEvent(false);
         private TimeSpan connectionEstablishTimeout = TimeSpan.FromMilliseconds(5000);
 
+
         private bool expectConnectionEstablishement = false;
+        private RequestPool<TClientControlFrameType> requestPool;
 
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
+
+        public event EventHandler<FrameReceivedEventArgs<TServerDataFrameType>> FrameReceived;
+
+        protected virtual void OnFrameReceived(FrameReceivedEventArgs<TServerDataFrameType> e)
+        {
+            EventHandler<FrameReceivedEventArgs<TServerDataFrameType>> handler = this.FrameReceived;
+            if (handler != null) handler(this, e);
+        }
 
         public TimeSpan ConnectionEstablishTimeout
         {
@@ -50,6 +60,8 @@ namespace PollingTcp.Client
             this.transportLayer = new ClientTransportLayer<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType>(clientNetworkLinkLayer, clientEncoder, serverDecoder, maxSequenceValue);
 
             this.transportLayer.FrameReceived += TransportLayerOnFrameReceived;
+
+            this.requestPool = new RequestPool<TClientControlFrameType>(this.transportLayer);
         }
 
         private void TransportLayerOnFrameReceived(object sender, FrameReceivedEventArgs<TServerDataFrameType> frameReceivedEventArgs)
@@ -62,6 +74,17 @@ namespace PollingTcp.Client
 
                 connectedEvent.Set();
                 this.SetNewConnectionState(ConnectionState.Connected);
+
+                this.requestPool.Start();
+
+                // Todo: Start timeout watcher
+            }
+            else if (this.connectionState == ConnectionState.Connected)
+            {
+                this.OnFrameReceived(new FrameReceivedEventArgs<TServerDataFrameType>
+                {
+                    Frame = frameReceivedEventArgs.Frame
+                });
             }
         }
 
@@ -101,6 +124,11 @@ namespace PollingTcp.Client
             ensureConnectedWithinTimeout.Start();
 
             return ensureConnectedWithinTimeout;
+        }
+
+        public void DisconnectAsync()
+        {
+            this.requestPool.Stop();
         }
 
         public void Send(TClientDataFrameType frame)

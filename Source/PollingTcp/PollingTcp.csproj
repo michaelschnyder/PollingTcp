@@ -48,6 +48,8 @@
     <Compile Include="Client\ConnectionState.cs" />
     <Compile Include="Client\ConnectionStateChangedEventArgs.cs" />
     <Compile Include="Client\IClientFrameEncoder.cs" />
+    <Compile Include="Client\RequestClient.cs" />
+    <Compile Include="Client\RequestPool.cs" />
     <Compile Include="Common\DataReceivedEventArgs.cs" />
     <Compile Include="Common\FrameEncoder.cs" />
     <Compile Include="Common\FrameReceivedEventArgs.cs" />

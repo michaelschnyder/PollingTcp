@@ -60,7 +60,7 @@ namespace PollingTcp.Tests
             var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
             
             client.ConnectionEstablishTimeout = TimeSpan.FromMilliseconds(250);
-            client.ConnectAsync().Wait(client.ConnectionEstablishTimeout.Milliseconds * 10);
+            client.ConnectAsync().Wait();
 
             Assert.AreEqual(ConnectionState.Disconnected, client.ConnectionState);
         }
