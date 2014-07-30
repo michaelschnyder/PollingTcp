@@ -20,7 +20,7 @@ namespace PollingTcp.Client
         private int clientId;
 
         private readonly AutoResetEvent connectedEvent = new AutoResetEvent(false);
-        private TimeSpan connectionEstablishTimeout = TimeSpan.FromMilliseconds(5000);
+        private TimeSpan connectionEstablishTimeout = TimeSpan.FromMilliseconds(1000);
 
 
         private bool expectConnectionEstablishement = false;
@@ -111,11 +111,13 @@ namespace PollingTcp.Client
             var ensureConnectedWithinTimeout = new Task<bool>(() =>
             {
                 this.connectedEvent.WaitOne(this.ConnectionEstablishTimeout);
+                this.connectedEvent.Reset();
 
                 this.expectConnectionEstablishement = false;
 
                 if (this.connectionState != ConnectionState.Connected)
                 {
+                    this.SetNewConnectionState(ConnectionState.Timeout);
                     this.SetNewConnectionState(ConnectionState.Disconnected);
                 }
 

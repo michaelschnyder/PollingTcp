@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -64,10 +65,27 @@ namespace PollingTcp.Tests
         {
             var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
             
-            client.ConnectionEstablishTimeout = TimeSpan.FromMilliseconds(250);
+            client.ConnectionEstablishTimeout = TimeSpan.FromMilliseconds(5);
             client.ConnectAsync().Wait();
 
             Assert.AreEqual(ConnectionState.Disconnected, client.ConnectionState);
+        }
+
+        [TestMethod]
+        public void ConnectingClient_WithNoResponse_ShouldShouldTriggerTimeoutConnectionAndDisconnectedEvent()
+        {
+            var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
+            var recordedConnectionStates = new List<ConnectionState>();
+
+            client.ConnectionEstablishTimeout = TimeSpan.FromMilliseconds(5);
+            client.ConnectionStateChanged += (sender, args) => recordedConnectionStates.Add(args.State);
+            
+            client.ConnectAsync().Wait();
+
+            Assert.AreEqual(3, recordedConnectionStates.Count);
+            Assert.AreEqual(ConnectionState.Connecting, recordedConnectionStates[0]);
+            Assert.AreEqual(ConnectionState.Timeout, recordedConnectionStates[1]);
+            Assert.AreEqual(ConnectionState.Disconnected, recordedConnectionStates[2]);
         }
 
         [TestMethod]

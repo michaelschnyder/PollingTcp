@@ -5,6 +5,7 @@
         Disconnected,
         Connecting,
         Connected,
+        Timeout, 
         Error
     }
 }
