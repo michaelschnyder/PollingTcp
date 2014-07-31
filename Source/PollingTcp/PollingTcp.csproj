@@ -47,6 +47,7 @@
   <ItemGroup>
     <Compile Include="Client\ConnectionState.cs" />
     <Compile Include="Client\ConnectionStateChangedEventArgs.cs" />
+    <Compile Include="Client\ISendControlFrame.cs" />
     <Compile Include="Shared\DefaultProtocolSpecification.cs" />
     <Compile Include="Client\IClientFrameEncoder.cs" />
     <Compile Include="Shared\IProtocolSpecification.cs" />

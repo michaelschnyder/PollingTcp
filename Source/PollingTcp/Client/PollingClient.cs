@@ -20,7 +20,7 @@ namespace PollingTcp.Client
         private int clientId;
 
         private readonly AutoResetEvent connectedEvent = new AutoResetEvent(false);
-        private TimeSpan connectionEstablishTimeout = TimeSpan.FromMilliseconds(1000);
+        private TimeSpan connectionAttemptTimeout = TimeSpan.FromMilliseconds(1000);
         private bool expectConnectionEstablishement;
 
         private RequestPool<TClientControlFrameType> requestPool;
@@ -48,10 +48,16 @@ namespace PollingTcp.Client
 
         #region Properties
 
-        public TimeSpan ConnectionEstablishTimeout
+        public TimeSpan ConnectionAttemptTimeout
         {
-            get { return this.connectionEstablishTimeout; }
-            set { this.connectionEstablishTimeout = value; }
+            get { return this.connectionAttemptTimeout; }
+            set { this.connectionAttemptTimeout = value; }
+        }
+
+        public TimeSpan ServerResponseTimeout
+        {
+            get { return this.connectionAttemptTimeout; }
+            set { this.connectionAttemptTimeout = value; }
         }
 
         public IProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> Protocol
@@ -63,7 +69,6 @@ namespace PollingTcp.Client
         {
             get { return this.connectionState; }
         }
-
 
         #endregion
 
@@ -167,7 +172,7 @@ namespace PollingTcp.Client
 
             var ensureConnectedWithinTimeout = new Task<bool>(() =>
             {
-                this.connectedEvent.WaitOne(this.ConnectionEstablishTimeout);
+                this.connectedEvent.WaitOne(this.ConnectionAttemptTimeout);
                 this.connectedEvent.Reset();
 
                 this.expectConnectionEstablishement = false;

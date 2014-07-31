@@ -59,6 +59,7 @@
     <Compile Include="Helper\BinaryServerFrameEncoder.cs" />
     <Compile Include="FrameBufferTests.cs" />
     <Compile Include="Helper\ClientTestNetworkLinkLayer.cs" />
+    <Compile Include="Helper\ConnectionHelper.cs" />
     <Compile Include="Helper\DataFrameBuffer.cs" />
     <Compile Include="Helper\ServerTestNetworkLinkLayer.cs" />
     <Compile Include="PollingClientTests.cs" />
@@ -67,6 +68,7 @@
     <Compile Include="Helper\TestNetworkLinkLayer.cs" />
     <Compile Include="Helper\TestDataFrame.cs" />
     <Compile Include="Helper\TestProtocolSpecification.cs" />
+    <Compile Include="RequestPoolTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PollingTcp\PollingTcp.csproj">

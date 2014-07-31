@@ -3,7 +3,7 @@ using PollingTcp.Client;
 using PollingTcp.Common;
 using PollingTcp.Server;
 
-namespace PollingTcp.Tests
+namespace PollingTcp.Tests.Helper
 {
     public class CombinedTestNetworkLayer : IClientNetworkLinkLayer, IServerNetworkLinkLayer
     {

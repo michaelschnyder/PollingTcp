@@ -8,17 +8,17 @@ namespace PollingTcp.Client
     {
         private readonly ISendControlFrame<TSendControlFrameType> transportLayer;
         List<RequestClient<TSendControlFrameType>> clients = new List<RequestClient<TSendControlFrameType>>();
-        private readonly int maxClientsActive;
+        private readonly int initialClientSize;
 
         public RequestPool(ISendControlFrame<TSendControlFrameType> transportLayer)
         {
             this.transportLayer = transportLayer;
-            this.maxClientsActive = 4;
+            this.initialClientSize = 4;
         }
 
-        public int MaxClientsActive
+        public int InitialClientSize
         {
-            get { return this.maxClientsActive; }
+            get { return this.initialClientSize; }
         }
 
         public int ActiveClients
@@ -30,7 +30,7 @@ namespace PollingTcp.Client
 
         public void Start()
         {
-            for (int i = 0; i < this.MaxClientsActive; i++)
+            for (int i = 0; i < this.InitialClientSize; i++)
             {
                 var client = new RequestClient<TSendControlFrameType>(this.transportLayer, this.ClientId);
                 client.Start();
@@ -38,9 +38,9 @@ namespace PollingTcp.Client
             }    
         }
 
-        public async void Stop()
+        public void Stop()
         {
-            await this.StopAsync();
+            this.StopAsync().Wait();
         }
 
         public Task StopAsync()

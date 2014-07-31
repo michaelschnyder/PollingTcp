@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PollingTcp.Client;
 using PollingTcp.Frame;
 using PollingTcp.Server;
+using PollingTcp.Tests.Helper;
 
 namespace PollingTcp.Tests
 {
@@ -25,7 +26,7 @@ namespace PollingTcp.Tests
             var client = new TestPollingClient(networkLayer);
             var server = new TestPollingServer(networkLayer, 10, 10);
 
-            var session = WaitForConnectionEstablishment(server, client);
+            var session = ConnectionHelper.WaitForConnectionEstablishment(server, client);
 
             session.FrameReceived += (sender, args) => receivedMessagesInSession.Add(Encoding.UTF8.GetString(args.Frame.Payload));
 
@@ -52,7 +53,7 @@ namespace PollingTcp.Tests
 
             server.Start();
 
-            var session = WaitForConnectionEstablishment(server, client);
+            var session = ConnectionHelper.WaitForConnectionEstablishment(server, client);
             client.FrameReceived += (sender, args) =>
             {
                 receivedMessagesOnClient.Add(Encoding.UTF8.GetString(args.Frame.Payload));
@@ -73,30 +74,10 @@ namespace PollingTcp.Tests
             client.DisconnectAsync().Wait();
         }
 
-        private static ClientSession<ClientDataFrame, ServerDataFrame> WaitForConnectionEstablishment(TestPollingServer server, TestPollingClient client)
+        [TestMethod]
+        public void ConnectionAstablished_ServerIsStopped_ClientDisconnects()
         {
-            var isSessionAccepted = new AutoResetEvent(false);
-
-            ClientSession<ClientDataFrame, ServerDataFrame> session = null;
-            server.Start();
-
-            var task = new Task(() =>
-            {
-                session = server.Accept();
-                isSessionAccepted.Set();
-            });
-
-            task.Start();
-
-            while (!isSessionAccepted.WaitOne(10))
-            {
-                client.ConnectAsync().Wait();
-
-            }
-
-            Assert.AreEqual(ConnectionState.Connected, client.ConnectionState);
-            Assert.IsNotNull(session);
-            return session;
+            
         }
     }
 }

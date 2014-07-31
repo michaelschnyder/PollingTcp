@@ -1,8 +1,7 @@
 using PollingTcp.Common;
 using PollingTcp.Frame;
-using PollingTcp.Shared;
 
-namespace PollingTcp.Tests
+namespace PollingTcp.Tests.Helper
 {
     class BinaryServerFrameEncoder : FrameEncoder<ServerDataFrame>
     {

@@ -98,7 +98,7 @@ namespace PollingTcp.Tests
         {
             var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
             
-            client.ConnectionEstablishTimeout = TimeSpan.FromMilliseconds(5);
+            client.ConnectionAttemptTimeout = TimeSpan.FromMilliseconds(5);
             client.ConnectAsync().Wait();
 
             Assert.AreEqual(ConnectionState.Disconnected, client.ConnectionState);
@@ -110,7 +110,7 @@ namespace PollingTcp.Tests
             var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
             var recordedConnectionStates = new List<ConnectionState>();
 
-            client.ConnectionEstablishTimeout = TimeSpan.FromMilliseconds(5);
+            client.ConnectionAttemptTimeout = TimeSpan.FromMilliseconds(5);
             client.ConnectionStateChanged += (sender, args) => recordedConnectionStates.Add(args.State);
             
             client.ConnectAsync().Wait();

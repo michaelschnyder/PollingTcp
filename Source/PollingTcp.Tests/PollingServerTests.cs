@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PollingTcp.Frame;
 using PollingTcp.Server;
@@ -87,28 +86,9 @@ namespace PollingTcp.Tests
 
             server.Start();
 
-            session = this.WaitForClientSession(server, networkLayer);
+            session = ConnectionHelper.WaitForClientSession(server, networkLayer, this.initConnectionFrame);
 
             Assert.IsNotNull(session, "There was no session captured");
-        }
-
-        private ClientSession<ClientDataFrame, ServerDataFrame> WaitForClientSession(TestPollingServer server, ServerTestNetworkLinkLayer networkLayer)
-        {
-            ClientSession<ClientDataFrame, ServerDataFrame> session = null;
-            var resetEvent = new AutoResetEvent(false);
-            var t = new Task(() =>
-            {
-                session = server.Accept();
-                resetEvent.Set();
-            });
-
-            t.Start();
-
-            while (!resetEvent.WaitOne(10))
-            {
-                networkLayer.Receive(new BinaryClientFrameEncoder().Encode(this.initConnectionFrame));
-            }
-            return session;
         }
 
         [TestMethod]
@@ -119,7 +99,7 @@ namespace PollingTcp.Tests
 
             server.Start();
 
-            this.WaitForClientSession(server, networkLayer);
+            ConnectionHelper.WaitForClientSession(server, networkLayer, this.initConnectionFrame);
 
             networkLayer.Receive(new BinaryClientFrameEncoder().Encode(initConnectionFrame));
 
@@ -143,8 +123,8 @@ namespace PollingTcp.Tests
             var serverOnFrameReceived = new List<ClientDataFrame>();
 
             server.Start();
-            
-            var session = this.WaitForClientSession(server, networkLayer);
+
+            var session = ConnectionHelper.WaitForClientSession(server, networkLayer, this.initConnectionFrame);
             session.FrameReceived += (sender, args) => serverOnFrameReceived.Add(args.Frame);
 
             // Find out the ClientId

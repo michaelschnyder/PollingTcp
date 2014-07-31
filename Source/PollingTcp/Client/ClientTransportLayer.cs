@@ -84,9 +84,4 @@ namespace PollingTcp.Client
             this.networkLayer.Send(bytesToSend);
         }
     }
-
-    public interface ISendControlFrame<TSendControlFrameType>
-    {
-        void Send(TSendControlFrameType sendFrame);
-    }
 }
