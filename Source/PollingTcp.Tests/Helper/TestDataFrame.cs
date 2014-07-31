@@ -1,7 +1,6 @@
 ﻿using PollingTcp.Frame;
-using PollingTcp.Shared;
 
-namespace PollingTcp.Tests
+namespace PollingTcp.Tests.Helper
 {
     public class TestDataFrame : DataFrame, ISequencedDataFrame
     {

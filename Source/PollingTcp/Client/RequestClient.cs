@@ -12,7 +12,7 @@ namespace PollingTcp.Client
     {
         private readonly ISendControlFrame<TSendControlFrameType> transportLayer;
         private readonly int clientId;
-        private Thread workerThread;
+        private readonly Thread workerThread;
         private bool shouldStop;
 
         public RequestClient(ISendControlFrame<TSendControlFrameType> transportLayer, int clientId)

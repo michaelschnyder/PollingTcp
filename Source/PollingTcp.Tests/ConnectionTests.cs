@@ -33,6 +33,9 @@ namespace PollingTcp.Tests
 
             Assert.IsTrue(receivedMessagesInSession.Any());
             Assert.AreEqual(helloWorld, receivedMessagesInSession[0]);
+
+            server.Stop();
+            client.DisconnectAsync().Wait();
         }
 
         [TestMethod]
@@ -65,6 +68,9 @@ namespace PollingTcp.Tests
 
             Assert.IsTrue(receivedMessagesOnClient.Any());
             Assert.AreEqual(helloWorld, receivedMessagesOnClient[0]);
+
+            server.Stop();
+            client.DisconnectAsync().Wait();
         }
 
         private static ClientSession<ClientDataFrame, ServerDataFrame> WaitForConnectionEstablishment(TestPollingServer server, TestPollingClient client)
