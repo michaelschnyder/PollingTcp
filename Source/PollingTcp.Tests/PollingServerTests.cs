@@ -18,7 +18,7 @@ namespace PollingTcp.Tests
         [ExpectedException(typeof(ArgumentNullException))]
         public void InitializeServer_WithoutLinkLayer_ShouldRaiseException()
         {
-            var server = new TestPollingServer(null, 10, 10);
+            var server = new TestPollingServer(null);
         }
 
         [TestMethod]
@@ -60,7 +60,7 @@ namespace PollingTcp.Tests
         public void NewServer_TryToAcceptSessionButDidNotStartYet_ShouldThrowAnException()
         {
             var networkLayer = new ServerTestNetworkLinkLayer();
-            var server = new TestPollingServer(networkLayer, 10, 10);
+            var server = new TestPollingServer(networkLayer);
 
             server.Accept();
         }
@@ -69,7 +69,7 @@ namespace PollingTcp.Tests
         public void NewServer_ReceivesConnectionRequest_NothingHappens()
         {
             var networkLayer = new ServerTestNetworkLinkLayer();
-            var server = new TestPollingServer(networkLayer, 10, 10);
+            var server = new TestPollingServer(networkLayer);
 
             networkLayer.Receive(new BinaryClientFrameEncoder().Encode(this.initConnectionFrame));
             Assert.AreEqual(0, server.SessionCount);
@@ -79,7 +79,7 @@ namespace PollingTcp.Tests
         public void StartedServer_ReceivesEmptyClientId_ShouldUnblockAcceptAndReturnSession()
         {
             var networkLayer = new ServerTestNetworkLinkLayer();
-            var server = new TestPollingServer(networkLayer, 10, 10);
+            var server = new TestPollingServer(networkLayer);
 
             PollingClientSession<ClientDataFrame, ServerDataFrame> session = null;
 
@@ -94,7 +94,7 @@ namespace PollingTcp.Tests
         public void StartedServer_ReceivesEmptyClientId_ShouldResponseWithAClientId()
         {
             var networkLayer = new ServerTestNetworkLinkLayer();
-            var server = new TestPollingServer(networkLayer, 10, 10);
+            var server = new TestPollingServer(networkLayer);
 
             server.Start();
 
@@ -117,7 +117,7 @@ namespace PollingTcp.Tests
         public void EstablishedSession_ReceivesData_ShouldTriggerEventOnSession()
         {
             var networkLayer = new ServerTestNetworkLinkLayer();
-            var server = new TestPollingServer(networkLayer, 10, 10);
+            var server = new TestPollingServer(networkLayer);
 
             var serverOnFrameReceived = new List<ClientDataFrame>();
 
@@ -154,8 +154,8 @@ namespace PollingTcp.Tests
 
     class TestPollingServer : PollingServer<ClientControlFrame, ClientDataFrame, ServerDataFrame>
     {
-        public TestPollingServer(IServerNetworkLinkLayer networkLinkLayer, int maxIncomingSequenceValue, int maxOutgoingSequenceValue) : 
-            base(networkLinkLayer, new BinaryClientFrameEncoder(), new BinaryServerFrameEncoder(), maxIncomingSequenceValue, maxOutgoingSequenceValue)
+        public TestPollingServer(IServerNetworkLinkLayer networkLinkLayer) : 
+            base(networkLinkLayer, new BinaryClientFrameEncoder(), new BinaryServerFrameEncoder(), 50, 50)
         {
         }
 

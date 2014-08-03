@@ -20,8 +20,8 @@ namespace PollingTcp.Tests.Helper
 
         public TestProtocolSpecification()
         {
-            this.MaxClientSequenceValue = 10;
-            this.MaxServerSequenceValue = 10;
+            this.MaxClientSequenceValue = 50;
+            this.MaxServerSequenceValue = 50;
 
             this.KeepAliveClientInterval = TimeSpan.FromSeconds(1);
             this.KeepAliveServerInterval = TimeSpan.FromSeconds(1);
