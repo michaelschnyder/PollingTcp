@@ -28,8 +28,10 @@ namespace PollingTcp.Tests.Helper
             {
                 while (!isSessionAccepted.WaitOne(10))
                 {
-                    client.ConnectAsync().Wait();
-
+                    if (client.ConnectionState == ConnectionState.Disconnected)
+                    {
+                        client.ConnectAsync().Wait();
+                    }
                 }
 
                 // Backup for Build server (some extra time)

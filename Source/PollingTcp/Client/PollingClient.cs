@@ -158,6 +158,8 @@ namespace PollingTcp.Client
             this.ShutdownTimers();
 
             this.requestPool.StopAsync().Wait();
+
+            this.SetNewConnectionState(ConnectionState.Disconnected);
         }
 
         private void SendKeepAlivePacketTimerCallback(object state)
