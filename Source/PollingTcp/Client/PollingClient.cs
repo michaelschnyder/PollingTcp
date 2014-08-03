@@ -84,6 +84,10 @@ namespace PollingTcp.Client
             set { this.initialPollingPoolSize = value; }
         }
 
+        public int CurrentPollingPoolSize {
+            get { return this.requestPool.ActiveClients; }
+        }
+
         #endregion
 
         #region Constructor

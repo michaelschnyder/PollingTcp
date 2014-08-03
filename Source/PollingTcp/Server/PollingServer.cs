@@ -31,8 +31,8 @@ namespace PollingTcp.Server
 
         private readonly IProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> protocolSpecification;
 
-        private TimeSpan handshakeTimeout = TimeSpan.FromSeconds(1000);
-        private TimeSpan dataReceiveTimeout = TimeSpan.FromSeconds(1000);
+        private TimeSpan handshakeTimeout = TimeSpan.FromMilliseconds(1000);
+        private TimeSpan dataReceiveTimeout = TimeSpan.FromMilliseconds(1000);
 
         public int SessionCount
         {

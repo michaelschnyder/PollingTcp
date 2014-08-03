@@ -23,7 +23,7 @@ namespace PollingTcp.Tests
             var client = new TestPollingClient(networkLayer);
             var server = new TestPollingServer(networkLayer);
 
-            var session = ConnectionHelper.WaitForConnectionEstablishment(server, client);
+            var session = ConnectionHelper.WaitForConnectionHandshake(server, client);
 
             session.FrameReceived += (sender, args) => receivedMessagesInSession.Add(Encoding.UTF8.GetString(args.Frame.Payload));
 
@@ -50,7 +50,7 @@ namespace PollingTcp.Tests
 
             server.Start();
 
-            var session = ConnectionHelper.WaitForConnectionEstablishment(server, client);
+            var session = ConnectionHelper.WaitForConnectionHandshake(server, client);
             client.FrameReceived += (sender, args) =>
             {
                 receivedMessagesOnClient.Add(Encoding.UTF8.GetString(args.Frame.Payload));

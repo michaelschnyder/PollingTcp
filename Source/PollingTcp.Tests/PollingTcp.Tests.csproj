@@ -70,6 +70,8 @@
     <Compile Include="Helper\TestDataFrame.cs" />
     <Compile Include="Helper\TestProtocolSpecification.cs" />
     <Compile Include="RequestPoolTests.cs" />
+    <Compile Include="Helper\TestPollingClient.cs" />
+    <Compile Include="TestPollingServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PollingTcp\PollingTcp.csproj">

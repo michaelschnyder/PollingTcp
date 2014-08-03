@@ -9,7 +9,7 @@ namespace PollingTcp.Tests.Helper
 {
     internal class ConnectionHelper
     {
-        public static PollingClientSession<ClientDataFrame, ServerDataFrame> WaitForConnectionEstablishment(TestPollingServer server, TestPollingClient client)
+        public static PollingClientSession<ClientDataFrame, ServerDataFrame> WaitForConnectionHandshake(TestPollingServer server, TestPollingClient client)
         {
             var isSessionAccepted = new AutoResetEvent(false);
 
@@ -44,6 +44,26 @@ namespace PollingTcp.Tests.Helper
             Assert.AreEqual(ConnectionState.Connected, client.ConnectionState);
             Assert.IsNotNull(session);
             
+            return session;
+        }
+
+        public static PollingClientSession<ClientDataFrame, ServerDataFrame> WaitForConnectionEstablishment(PollingClientSession<ClientDataFrame, ServerDataFrame> session)
+        {
+            var isConnected = new AutoResetEvent(false);
+
+            session.StateChanged += (sender, args) =>
+            {
+                if (args.State == SessionState.Connected)
+                {
+                    isConnected.Set();
+                }
+            };
+
+            while (session.SessionState != SessionState.Connected)
+            {
+                isConnected.WaitOne(500);
+            }
+
             return session;
         }
 

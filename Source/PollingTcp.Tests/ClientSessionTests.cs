@@ -71,6 +71,41 @@ namespace PollingTcp.Tests
             Assert.AreEqual(CloseReason.HandshakeTimeout, sessionCloseReason);
         }
 
+        [TestMethod]
+        public void EstablishedSession_ReceivesNoData_ShouldCloseWithCorrectReason()
+        {
+            var sessionCloseReason = CloseReason.Unknown;
+
+            var waitEvent = new ManualResetEvent(false);
+
+            var networkLayer = new CombinedTestNetworkLayer();
+
+            var client = new TestPollingClient(networkLayer);
+            var server = new TestPollingServer(networkLayer);
+
+            var session = ConnectionHelper.WaitForConnectionHandshake(server, client);
+            ConnectionHelper.WaitForConnectionEstablishment(session);
+
+            Assert.AreEqual(SessionState.Connected, session.SessionState);
+
+            session.SessionClosed += (sender, args) =>
+            {
+                sessionCloseReason = args.Reason;
+                waitEvent.Set();
+            };
+
+            client.DisconnectAsync().Wait();
+
+            Assert.AreEqual(0, client.CurrentPollingPoolSize);
+
+            var eventHasBeenRaised = waitEvent.WaitOne(5000);
+
+            Assert.IsTrue(eventHasBeenRaised, "There should be a timeout event within the desired timeout!");
+            Assert.AreEqual(SessionState.Closed, session.SessionState);
+            Assert.AreEqual(CloseReason.HandshakeTimeout, sessionCloseReason);
+
+        }
+
         private static PollingClientSession<ClientDataFrame, ServerDataFrame> CreateDefaultSession()
         {
             return new PollingClientSession<ClientDataFrame, ServerDataFrame>(12345, new TestProtocolSpecification(), TimeSpan.FromMilliseconds(1000), TimeSpan.FromMilliseconds(1000));
