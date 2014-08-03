@@ -52,6 +52,7 @@
     <Compile Include="Server\SessionStateChangedEventArgs.cs" />
     <Compile Include="Shared\DefaultProtocolSpecification.cs" />
     <Compile Include="Client\IClientFrameEncoder.cs" />
+    <Compile Include="Shared\IProtocolRuntimeSpefication.cs" />
     <Compile Include="Shared\IProtocolSpecification.cs" />
     <Compile Include="Client\RequestClient.cs" />
     <Compile Include="Client\RequestPool.cs" />
