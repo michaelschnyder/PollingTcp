@@ -84,15 +84,16 @@ namespace PollingTcp.Tests
             var server = new TestPollingServer(networkLayer);
 
             var session = ConnectionHelper.WaitForConnectionHandshake(server, client);
-            ConnectionHelper.WaitForConnectionEstablishment(session);
-
-            Assert.AreEqual(SessionState.Connected, session.SessionState);
-
+            
             session.SessionClosed += (sender, args) =>
             {
                 sessionCloseReason = args.Reason;
                 waitEvent.Set();
             };
+
+            ConnectionHelper.WaitForConnectionEstablishment(session);
+
+            Assert.AreEqual(SessionState.Connected, session.SessionState);
 
             client.DisconnectAsync().Wait();
 
@@ -102,8 +103,7 @@ namespace PollingTcp.Tests
 
             Assert.IsTrue(eventHasBeenRaised, "There should be a timeout event within the desired timeout!");
             Assert.AreEqual(SessionState.Closed, session.SessionState);
-            Assert.AreEqual(CloseReason.HandshakeTimeout, sessionCloseReason);
-
+            Assert.AreEqual(CloseReason.ReceiveTimeout, sessionCloseReason);
         }
 
         private static PollingClientSession<ClientDataFrame, ServerDataFrame> CreateDefaultSession()

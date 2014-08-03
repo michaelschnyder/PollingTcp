@@ -58,21 +58,4 @@ namespace PollingTcp.Tests
             Assert.AreEqual(0, requestPool.ActiveClients);
         }
     }
-
-    class ClientTestTransportLayer : ISendControlFrame<ClientControlFrame>
-    {
-        private readonly ClientTestNetworkLinkLayer clientNetworkLayer;
-        private BinaryClientFrameEncoder encoder;
-
-        public ClientTestTransportLayer(ClientTestNetworkLinkLayer clientNetworkLayer)
-        {
-            this.clientNetworkLayer = clientNetworkLayer;
-            this.encoder = new BinaryClientFrameEncoder();
-        }
-
-        public void Send(ClientControlFrame sendFrame)
-        {
-            this.clientNetworkLayer.Send(this.encoder.Encode(sendFrame));
-        }
-    }
 }

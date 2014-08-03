@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -300,27 +298,6 @@ namespace PollingTcp.Tests
             var isEventRaised = timedOutEventRaised.WaitOne(5000);
 
             Assert.IsTrue(isEventRaised);
-        }
-    }
-
-    class GenericSerializer<TDataType>
-    {
-        public byte[] Serialize(TDataType obj)
-        {
-            var bformatter = new BinaryFormatter();
-            var mStream = new MemoryStream();
-
-            bformatter.Serialize(mStream, obj);
-            return mStream.ToArray();
-        }
-
-        public TDataType Deserialze(byte[] data)
-        {
-            var bformatter = new BinaryFormatter();
-            var mStream = new MemoryStream(data);
-
-            var value = bformatter.Deserialize(mStream);
-            return (TDataType)value;
         }
     }
 }

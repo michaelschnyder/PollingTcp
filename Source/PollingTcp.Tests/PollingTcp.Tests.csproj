@@ -54,6 +54,8 @@
   </Choose>
   <ItemGroup>
     <Compile Include="ClientSessionTests.cs" />
+    <Compile Include="ClientTestTransportLayer.cs" />
+    <Compile Include="Helper\GenericSerializer.cs" />
     <Compile Include="Helper\CombinedTestNetworkLayer.cs" />
     <Compile Include="ConnectionTests.cs" />
     <Compile Include="Helper\BinaryClientFrameEncoder.cs" />
@@ -71,7 +73,7 @@
     <Compile Include="Helper\TestProtocolSpecification.cs" />
     <Compile Include="RequestPoolTests.cs" />
     <Compile Include="Helper\TestPollingClient.cs" />
-    <Compile Include="TestPollingServer.cs" />
+    <Compile Include="Helper\TestPollingServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PollingTcp\PollingTcp.csproj">

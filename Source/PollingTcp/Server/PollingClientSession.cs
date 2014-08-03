@@ -138,6 +138,10 @@ namespace PollingTcp.Server
             });
 
             this.SetNewSessionState(SessionState.Closed);
+
+            this.handshakeTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+            this.dataReceiveTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+            this.keepAlivePacketSenderTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
 
         private void FrameBufferOnFrameBlockReceived(object sender, FrameBlockReceivedEventArgs<TClientDataFrameType> frameBlockReceivedEventArgs)
@@ -211,6 +215,7 @@ namespace PollingTcp.Server
                 this.SetNewSessionState(SessionState.Connected);
 
                 this.keepAlivePacketSenderTimer.Change(this.protocolruntimeSpecification.KeepAliveServerInterval, this.protocolruntimeSpecification.KeepAliveServerInterval);
+                this.handshakeTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
             }
 
             this.dataReceiveTimer.Change(this.dataReceiveTimeout, this.dataReceiveTimeout);
