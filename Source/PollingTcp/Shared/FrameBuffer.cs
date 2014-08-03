@@ -37,7 +37,7 @@ namespace PollingTcp.Shared
         {
             if (frame.SequenceId > this.maxSequenceValue)
             {
-                throw new ArgumentOutOfRangeException("frame", frame.SequenceId, "The value of the frameId should be lower or equal the max sequence value defined.");
+                throw new ArgumentOutOfRangeException("frame", string.Format("The frameId {0} should be lower or equal the max sequence value {1}.",frame.SequenceId, this.maxSequenceValue));
             }
 
             this.buffer[frame.SequenceId] = frame;
