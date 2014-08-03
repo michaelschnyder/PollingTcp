@@ -12,6 +12,9 @@ namespace PollingTcp.Tests.Helper
         public FrameEncoder<ServerDataFrame> ServerEncoder { get; set; }
         public int MaxClientSequenceValue { get; private set; }
         public int MaxServerSequenceValue { get; private set; }
+
+        public int MaxClientIdValue { get { return 746438; } }
+
         public TimeSpan KeepAliveClientInterval { get; set; }
         public TimeSpan KeepAliveServerInterval { get; set; }
 

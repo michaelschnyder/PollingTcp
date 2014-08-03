@@ -1,20 +1,16 @@
-﻿using System;
-using PollingTcp.Client;
+﻿using PollingTcp.Client;
 using PollingTcp.Common;
 using PollingTcp.Frame;
 
 namespace PollingTcp.Shared
 {
-    public interface IProtocolSpecification<in TClientControlFrameType, in TClientDataFrameType, TServerDataFrameType>
+    public interface IProtocolSpecification<in TClientControlFrameType, in TClientDataFrameType, TServerDataFrameType> : IProtocolRuntimeSpefication
         where TClientControlFrameType : ClientControlFrame, new()
         where TClientDataFrameType : ClientDataFrame, new()
         where TServerDataFrameType : ServerDataFrame, new()
-{
-    IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> ClientEncoder { get; }
-    FrameEncoder<TServerDataFrameType> ServerEncoder { get; }
-    int MaxClientSequenceValue { get; }
-    int MaxServerSequenceValue { get; }
-    TimeSpan KeepAliveClientInterval { get; }
-    TimeSpan KeepAliveServerInterval { get; }
-}
+    {
+        IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> ClientEncoder { get; }
+        FrameEncoder<TServerDataFrameType> ServerEncoder { get; }
+    
+    }
 }

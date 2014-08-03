@@ -48,6 +48,8 @@
     <Compile Include="Client\ConnectionState.cs" />
     <Compile Include="Client\ConnectionStateChangedEventArgs.cs" />
     <Compile Include="Client\ISendControlFrame.cs" />
+    <Compile Include="Server\SessionState.cs" />
+    <Compile Include="Server\SessionStateChangedEventArgs.cs" />
     <Compile Include="Shared\DefaultProtocolSpecification.cs" />
     <Compile Include="Client\IClientFrameEncoder.cs" />
     <Compile Include="Shared\IProtocolSpecification.cs" />
@@ -62,7 +64,7 @@
     <Compile Include="Client\PollingClient.cs" />
     <Compile Include="Server\IServerNetworkLinkLayer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Server\ClientSession.cs">
+    <Compile Include="Server\PollingClientSession.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Server\PollingServer.cs" />

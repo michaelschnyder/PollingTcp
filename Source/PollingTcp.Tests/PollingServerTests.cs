@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PollingTcp.Frame;
 using PollingTcp.Server;
@@ -82,7 +81,7 @@ namespace PollingTcp.Tests
             var networkLayer = new ServerTestNetworkLinkLayer();
             var server = new TestPollingServer(networkLayer, 10, 10);
 
-            ClientSession<ClientDataFrame, ServerDataFrame> session = null;
+            PollingClientSession<ClientDataFrame, ServerDataFrame> session = null;
 
             server.Start();
 

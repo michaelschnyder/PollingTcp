@@ -9,11 +9,11 @@ namespace PollingTcp.Tests.Helper
 {
     internal class ConnectionHelper
     {
-        public static ClientSession<ClientDataFrame, ServerDataFrame> WaitForConnectionEstablishment(TestPollingServer server, TestPollingClient client)
+        public static PollingClientSession<ClientDataFrame, ServerDataFrame> WaitForConnectionEstablishment(TestPollingServer server, TestPollingClient client)
         {
             var isSessionAccepted = new AutoResetEvent(false);
 
-            ClientSession<ClientDataFrame, ServerDataFrame> session = null;
+            PollingClientSession<ClientDataFrame, ServerDataFrame> session = null;
             server.Start();
 
             var task = new Task(() =>
@@ -36,9 +36,9 @@ namespace PollingTcp.Tests.Helper
             return session;
         }
 
-        internal static ClientSession<ClientDataFrame, ServerDataFrame> WaitForClientSession(TestPollingServer server, ServerTestNetworkLinkLayer networkLayer, ClientDataFrame initConnectionFrame)
+        internal static PollingClientSession<ClientDataFrame, ServerDataFrame> WaitForClientSession(TestPollingServer server, ServerTestNetworkLinkLayer networkLayer, ClientDataFrame initConnectionFrame)
         {
-            ClientSession<ClientDataFrame, ServerDataFrame> session = null;
+            PollingClientSession<ClientDataFrame, ServerDataFrame> session = null;
             var resetEvent = new AutoResetEvent(false);
             var t = new Task(() =>
             {

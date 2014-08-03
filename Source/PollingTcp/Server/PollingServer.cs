@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using PollingTcp.Client;
@@ -22,17 +23,32 @@ namespace PollingTcp.Server
         private readonly int maxOutgoingSequenceValue;
         private bool handleConnectionRequests;
 
-        private readonly ConcurrentBag<ClientSession<TClientDataFrameType, TServerDataFrameType>> clientSessions = new ConcurrentBag<ClientSession<TClientDataFrameType, TServerDataFrameType>>(); 
+        private readonly ConcurrentBag<PollingClientSession<TClientDataFrameType, TServerDataFrameType>> clientSessions = new ConcurrentBag<PollingClientSession<TClientDataFrameType, TServerDataFrameType>>(); 
 
-        private readonly BlockingCollection<ClientSession<TClientDataFrameType, TServerDataFrameType>> connectionRequests = new BlockingCollection<ClientSession<TClientDataFrameType, TServerDataFrameType>>();
+        private readonly BlockingCollection<PollingClientSession<TClientDataFrameType, TServerDataFrameType>> connectionRequests = new BlockingCollection<PollingClientSession<TClientDataFrameType, TServerDataFrameType>>();
         private CancellationTokenSource cancellationToken;
         private bool isStarted;
 
-        private IProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> protocolSpecification;
+        private readonly IProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> protocolSpecification;
+
+        private TimeSpan handshakeTimeout = TimeSpan.FromSeconds(1000);
+        private TimeSpan dataReceiveTimeout = TimeSpan.FromSeconds(1000);
 
         public int SessionCount
         {
             get { return this.clientSessions.Count; }
+        }
+
+        public TimeSpan HandshakeTimeout
+        {
+            get { return this.handshakeTimeout; }
+            set { this.handshakeTimeout = value; }
+        }
+
+        public TimeSpan DataReceiveTimeout
+        {
+            get { return this.dataReceiveTimeout; }
+            set { this.dataReceiveTimeout = value; }
         }
 
         public PollingServer(IServerNetworkLinkLayer networkLinkLayer, IProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> specification)
@@ -93,10 +109,10 @@ namespace PollingTcp.Server
             }
             else
             {
-                ClientSession<TClientDataFrameType, TServerDataFrameType> clientSession;
-                if (this.clientSessions.TryPeek(out clientSession))
+                PollingClientSession<TClientDataFrameType, TServerDataFrameType> pollingClientSession;
+                if (this.clientSessions.TryPeek(out pollingClientSession))
                 {
-                    response = clientSession.HandleClientFrame(clientFrame);
+                    response = pollingClientSession.HandleClientFrame(clientFrame);
                 }
             }
             
@@ -112,18 +128,25 @@ namespace PollingTcp.Server
         {
             var clientId = this.GetClientSession();
 
-            var clientSession = new ClientSession<TClientDataFrameType, TServerDataFrameType>(clientId, this.maxIncomingSequenceValue, this.maxOutgoingSequenceValue);
-            this.clientSessions.Add(clientSession);
+            var clientSession = new PollingClientSession<TClientDataFrameType, TServerDataFrameType>(clientId, this.protocolSpecification, this.handshakeTimeout, this.dataReceiveTimeout);
 
+            this.clientSessions.Add(clientSession);
             this.connectionRequests.Add(clientSession);
 
-            var acceptResponse = clientSession.CreateAcceptResponse();
+            var acceptResponse = clientSession.Accept();
             return acceptResponse;
         }
 
         private int GetClientSession()
         {
-            return new Random().Next(12, 849849);
+            var clientSessionId = 0;
+
+            while (clientSessionId == 0 || this.clientSessions.Any(c => c.ClientId == clientSessionId))
+            {
+                clientSessionId = new Random().Next(1, this.protocolSpecification.MaxClientIdValue);
+            }
+
+            return clientSessionId;
         }
 
         public void Start()
@@ -141,7 +164,7 @@ namespace PollingTcp.Server
             this.isStarted = false;
         }
 
-        public ClientSession<TClientDataFrameType, TServerDataFrameType> Accept()
+        public PollingClientSession<TClientDataFrameType, TServerDataFrameType> Accept()
         {
             if (!this.isStarted)
             {
@@ -150,21 +173,21 @@ namespace PollingTcp.Server
 
             this.handleConnectionRequests = true;
 
-            ClientSession<TClientDataFrameType, TServerDataFrameType> clientSession = null;
+            PollingClientSession<TClientDataFrameType, TServerDataFrameType> pollingClientSession = null;
 
-            while (clientSession == null && !this.cancellationToken.IsCancellationRequested)
+            while (pollingClientSession == null && !this.cancellationToken.IsCancellationRequested)
             {
-                this.connectionRequests.TryTake(out clientSession, 1000);
+                this.connectionRequests.TryTake(out pollingClientSession, 1000);
             }
 
-            return clientSession;
+            return pollingClientSession;
         }
 
-        public Task<ClientSession<TClientDataFrameType, TServerDataFrameType>> AcceptAsync()
+        public Task<PollingClientSession<TClientDataFrameType, TServerDataFrameType>> AcceptAsync()
         {
-            Task<ClientSession<TClientDataFrameType, TServerDataFrameType>> task;
+            Task<PollingClientSession<TClientDataFrameType, TServerDataFrameType>> task;
                 
-            task = new Task<ClientSession<TClientDataFrameType, TServerDataFrameType>>(this.Accept);
+            task = new Task<PollingClientSession<TClientDataFrameType, TServerDataFrameType>>(this.Accept);
 
             task.Start();
 

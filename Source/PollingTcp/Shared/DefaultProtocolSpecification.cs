@@ -14,6 +14,8 @@ namespace PollingTcp.Shared
         public FrameEncoder<TServerDataFrameType> ServerEncoder { get; set; }
         public int MaxClientSequenceValue { get; set; }
         public int MaxServerSequenceValue { get; set; }
+        public int MaxClientIdValue { get; private set; }
+
         public TimeSpan KeepAliveClientInterval { get; set; }
         public TimeSpan KeepAliveServerInterval { get; set; }
 
@@ -24,6 +26,8 @@ namespace PollingTcp.Shared
 
             this.KeepAliveClientInterval = TimeSpan.FromSeconds(1);
             this.KeepAliveClientInterval = TimeSpan.FromSeconds(1);
+
+            this.MaxClientIdValue = int.MaxValue;
         }
     }
 }
