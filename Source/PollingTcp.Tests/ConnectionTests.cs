@@ -72,7 +72,7 @@ namespace PollingTcp.Tests
         }
 
         [TestMethod]
-        public void ConnectionAstablished_ServerIsStopped_ClientDisconnects()
+        public void ConnectionEstablished_ServerIsStopped_ClientDisconnects()
         {
             
         }

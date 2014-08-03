@@ -24,10 +24,21 @@ namespace PollingTcp.Tests.Helper
 
             task.Start();
 
-            while (!isSessionAccepted.WaitOne(10))
+            for (int i = 0; i < 3; i++)
             {
-                client.ConnectAsync().Wait();
+                while (!isSessionAccepted.WaitOne(10))
+                {
+                    client.ConnectAsync().Wait();
 
+                }
+
+                // Backup for Build server (some extra time)
+                if (client.ConnectionState == ConnectionState.Connected)
+                {
+                    break;
+                }
+
+                Thread.Sleep(1000 * (i + 1));
             }
 
             Assert.AreEqual(ConnectionState.Connected, client.ConnectionState);
