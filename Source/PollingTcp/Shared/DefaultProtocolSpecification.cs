@@ -1,3 +1,4 @@
+using System;
 using PollingTcp.Client;
 using PollingTcp.Common;
 using PollingTcp.Frame;
@@ -13,11 +14,16 @@ namespace PollingTcp.Shared
         public FrameEncoder<TServerDataFrameType> ServerEncoder { get; set; }
         public int MaxClientSequenceValue { get; set; }
         public int MaxServerSequenceValue { get; set; }
+        public TimeSpan KeepAliveClientInterval { get; set; }
+        public TimeSpan KeepAliveServerInterval { get; set; }
 
         public DefaultProtocolSpecification()
         {
             this.MaxClientSequenceValue = 512;
             this.MaxServerSequenceValue = 512;
+
+            this.KeepAliveClientInterval = TimeSpan.FromSeconds(1);
+            this.KeepAliveClientInterval = TimeSpan.FromSeconds(1);
         }
     }
 }

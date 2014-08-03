@@ -1,3 +1,4 @@
+using System;
 using PollingTcp.Client;
 using PollingTcp.Common;
 using PollingTcp.Frame;
@@ -11,11 +12,16 @@ namespace PollingTcp.Tests.Helper
         public FrameEncoder<ServerDataFrame> ServerEncoder { get; set; }
         public int MaxClientSequenceValue { get; private set; }
         public int MaxServerSequenceValue { get; private set; }
+        public TimeSpan KeepAliveClientInterval { get; set; }
+        public TimeSpan KeepAliveServerInterval { get; set; }
 
         public TestProtocolSpecification()
         {
             this.MaxClientSequenceValue = 10;
             this.MaxServerSequenceValue = 10;
+
+            this.KeepAliveClientInterval = TimeSpan.FromSeconds(1);
+            this.KeepAliveServerInterval = TimeSpan.FromSeconds(1);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using PollingTcp.Client;
@@ -98,7 +99,7 @@ namespace PollingTcp.Tests
         {
             var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
             
-            client.ConnectionAttemptTimeout = TimeSpan.FromMilliseconds(5);
+            client.ConnectionTimeout = TimeSpan.FromMilliseconds(5);
             client.ConnectAsync().Wait();
 
             Assert.AreEqual(ConnectionState.Disconnected, client.ConnectionState);
@@ -110,7 +111,7 @@ namespace PollingTcp.Tests
             var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
             var recordedConnectionStates = new List<ConnectionState>();
 
-            client.ConnectionAttemptTimeout = TimeSpan.FromMilliseconds(5);
+            client.ConnectionTimeout = TimeSpan.FromMilliseconds(5);
             client.ConnectionStateChanged += (sender, args) => recordedConnectionStates.Add(args.State);
             
             client.ConnectAsync().Wait();
@@ -210,6 +211,42 @@ namespace PollingTcp.Tests
 
             Assert.IsTrue(allSentControlFrames.Any());
             Assert.IsTrue(allSentControlFrames.OfType<ClientControlFrame>().Any());
+        }
+
+        [TestMethod]
+        public void ConnectedClient_ReceivesNoServerFrames_ShouldTimeoutAndDisonnect()
+        {
+            var timedOutEventRaised = new AutoResetEvent(false);
+
+            var connectionRequestResponse = new ServerDataFrame()
+            {
+                SequenceId = 7,
+                Payload = BitConverter.GetBytes(12345)
+            };
+
+            var networkLayer = new ClientTestNetworkLinkLayer();
+
+            var client = new TestPollingClient(networkLayer);
+            client.ReceiveTimeout = TimeSpan.FromMilliseconds(500);
+
+            client.ConnectionStateChanged += (sender, args) =>
+            {
+                if (args.State == ConnectionState.Timeout)
+                {
+                    timedOutEventRaised.Set();
+                }
+            };
+
+            client.ConnectAsync();
+
+            byte[] data = this.serverDataFrameSerializer.Serialize(connectionRequestResponse);
+            networkLayer.Receive(data);
+
+            Assert.AreEqual(ConnectionState.Connected, client.ConnectionState);
+
+            var isEventRaised = timedOutEventRaised.WaitOne(5000);
+
+            Assert.IsTrue(isEventRaised);
         }
     }
 

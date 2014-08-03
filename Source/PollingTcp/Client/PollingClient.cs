@@ -20,7 +20,9 @@ namespace PollingTcp.Client
         private int clientId;
 
         private readonly AutoResetEvent connectedEvent = new AutoResetEvent(false);
-        private TimeSpan connectionAttemptTimeout = TimeSpan.FromMilliseconds(1000);
+        private TimeSpan connectionTimeout = TimeSpan.FromMilliseconds(1000);
+        private TimeSpan receiveTimeout = TimeSpan.FromMilliseconds(1000);
+
         private bool expectConnectionEstablishement;
 
         private RequestPool<TClientControlFrameType> requestPool;
@@ -28,6 +30,8 @@ namespace PollingTcp.Client
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
 
         public event EventHandler<FrameReceivedEventArgs<TServerDataFrameType>> FrameReceived;
+
+        private readonly Timer receivedDataTimeoutTimer;
 
         #region Event Invocators
 
@@ -48,16 +52,16 @@ namespace PollingTcp.Client
 
         #region Properties
 
-        public TimeSpan ConnectionAttemptTimeout
+        public TimeSpan ConnectionTimeout
         {
-            get { return this.connectionAttemptTimeout; }
-            set { this.connectionAttemptTimeout = value; }
+            get { return this.connectionTimeout; }
+            set { this.connectionTimeout = value; }
         }
 
-        public TimeSpan ServerResponseTimeout
+        public TimeSpan ReceiveTimeout
         {
-            get { return this.connectionAttemptTimeout; }
-            set { this.connectionAttemptTimeout = value; }
+            get { return this.receiveTimeout; }
+            set { this.receiveTimeout = value; }
         }
 
         public IProtocolSpecification<TClientControlFrameType, TClientDataFrameType, TServerDataFrameType> Protocol
@@ -108,6 +112,8 @@ namespace PollingTcp.Client
             this.transportLayer.FrameReceived += TransportLayerOnFrameReceived;
 
             this.requestPool = new RequestPool<TClientControlFrameType>(this.transportLayer);
+            
+            this.receivedDataTimeoutTimer = new Timer(this.ReceivedDataTimeoutTimerCallback);
         }
 
         public PollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer, IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> clientEncoder, FrameEncoder<TServerDataFrameType> serverEncoder)
@@ -131,21 +137,23 @@ namespace PollingTcp.Client
 
         #endregion
 
+        private void ReceivedDataTimeoutTimerCallback(object state)
+        {
+            this.SetNewConnectionState(ConnectionState.Timeout);
+            this.requestPool.StopAsync().Wait();
+        }
+
         private void TransportLayerOnFrameReceived(object sender, FrameReceivedEventArgs<TServerDataFrameType> frameReceivedEventArgs)
         {
+            this.receivedDataTimeoutTimer.Change(this.receiveTimeout, Timeout.InfiniteTimeSpan);
+
             if (this.connectionState == ConnectionState.Connecting && this.expectConnectionEstablishement)
             {
                 var data = frameReceivedEventArgs.Frame.Payload;
 
-                this.clientId = BitConverter.ToInt32(data, 0);
+                var assignedClientId = BitConverter.ToInt32(data, 0);
 
-                connectedEvent.Set();
-                this.SetNewConnectionState(ConnectionState.Connected);
-
-                this.requestPool.ClientId = this.clientId;
-                this.requestPool.Start();
-
-                // Todo: Start timeout watcher
+                this.StartConnection(assignedClientId);
             }
             else if (this.connectionState == ConnectionState.Connected)
             {
@@ -154,6 +162,19 @@ namespace PollingTcp.Client
                     Frame = frameReceivedEventArgs.Frame
                 });
             }
+        }
+
+        private void StartConnection(int assignedClientId)
+        {
+            this.clientId = assignedClientId;
+
+            this.connectedEvent.Set();
+            this.SetNewConnectionState(ConnectionState.Connected);
+
+            this.requestPool.ClientId = this.clientId;
+            this.requestPool.Start();
+
+            this.receivedDataTimeoutTimer.Change(this.receiveTimeout, Timeout.InfiniteTimeSpan);
         }
 
         public Task<bool> ConnectAsync()
@@ -172,7 +193,7 @@ namespace PollingTcp.Client
 
             var ensureConnectedWithinTimeout = new Task<bool>(() =>
             {
-                this.connectedEvent.WaitOne(this.ConnectionAttemptTimeout);
+                this.connectedEvent.WaitOne(this.ConnectionTimeout);
                 this.connectedEvent.Reset();
 
                 this.expectConnectionEstablishement = false;
@@ -193,6 +214,8 @@ namespace PollingTcp.Client
 
         public Task DisconnectAsync()
         {
+            this.receivedDataTimeoutTimer.Change(Timeout.Infinite, Timeout.Infinite);
+
             if (this.connectionState != ConnectionState.Connected && this.connectionState != ConnectionState.Connecting)
             {
                 throw new Exception(string.Format("Illegal State to disconnect: {0}", this.connectionState));

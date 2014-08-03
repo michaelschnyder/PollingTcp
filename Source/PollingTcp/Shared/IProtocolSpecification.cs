@@ -1,4 +1,5 @@
-﻿using PollingTcp.Client;
+﻿using System;
+using PollingTcp.Client;
 using PollingTcp.Common;
 using PollingTcp.Frame;
 
@@ -13,5 +14,7 @@ namespace PollingTcp.Shared
     FrameEncoder<TServerDataFrameType> ServerEncoder { get; }
     int MaxClientSequenceValue { get; }
     int MaxServerSequenceValue { get; }
+    TimeSpan KeepAliveClientInterval { get; }
+    TimeSpan KeepAliveServerInterval { get; }
 }
 }
