@@ -33,6 +33,10 @@ namespace PollingTcp.Client
 
         private readonly Timer receivedDataTimeoutTimer;
 
+        private readonly Timer sendKeepAlivePacketTimer;
+        
+        private int initialPollingPoolSize;
+
         #region Event Invocators
 
         protected virtual void OnFrameReceived(FrameReceivedEventArgs<TServerDataFrameType> e)
@@ -74,6 +78,12 @@ namespace PollingTcp.Client
             get { return this.connectionState; }
         }
 
+        public int InitialPollingPoolSize
+        {
+            get { return this.initialPollingPoolSize; }
+            set { this.initialPollingPoolSize = value; }
+        }
+
         #endregion
 
         #region Constructor
@@ -111,9 +121,10 @@ namespace PollingTcp.Client
 
             this.transportLayer.FrameReceived += TransportLayerOnFrameReceived;
 
-            this.requestPool = new RequestPool<TClientControlFrameType>(this.transportLayer);
-            
+            this.InitialPollingPoolSize = 4;
+
             this.receivedDataTimeoutTimer = new Timer(this.ReceivedDataTimeoutTimerCallback);
+            this.sendKeepAlivePacketTimer = new Timer(SendKeepAlivePacketTimerCallback);
         }
 
         public PollingClient(IClientNetworkLinkLayer clientNetworkLinkLayer, IClientFrameEncoder<TClientControlFrameType, TClientDataFrameType> clientEncoder, FrameEncoder<TServerDataFrameType> serverEncoder)
@@ -140,7 +151,17 @@ namespace PollingTcp.Client
         private void ReceivedDataTimeoutTimerCallback(object state)
         {
             this.SetNewConnectionState(ConnectionState.Timeout);
+            this.ShutdownTimers();
+
             this.requestPool.StopAsync().Wait();
+        }
+
+        private void SendKeepAlivePacketTimerCallback(object state)
+        {
+            this.transportLayer.Send(new TClientControlFrameType()
+            {
+                ClientId = this.clientId,
+            });
         }
 
         private void TransportLayerOnFrameReceived(object sender, FrameReceivedEventArgs<TServerDataFrameType> frameReceivedEventArgs)
@@ -171,10 +192,19 @@ namespace PollingTcp.Client
             this.connectedEvent.Set();
             this.SetNewConnectionState(ConnectionState.Connected);
 
+            this.requestPool = new RequestPool<TClientControlFrameType>(this.transportLayer, this.InitialPollingPoolSize);
+
             this.requestPool.ClientId = this.clientId;
             this.requestPool.Start();
 
             this.receivedDataTimeoutTimer.Change(this.receiveTimeout, Timeout.InfiniteTimeSpan);
+            this.sendKeepAlivePacketTimer.Change(this.protocolSpecification.KeepAliveClientInterval, this.protocolSpecification.KeepAliveClientInterval);
+        }
+
+        private void ShutdownTimers()
+        {
+            this.receivedDataTimeoutTimer.Change(Timeout.Infinite, Timeout.Infinite);
+            this.sendKeepAlivePacketTimer.Change(Timeout.Infinite, Timeout.Infinite);
         }
 
         public Task<bool> ConnectAsync()
@@ -214,7 +244,7 @@ namespace PollingTcp.Client
 
         public Task DisconnectAsync()
         {
-            this.receivedDataTimeoutTimer.Change(Timeout.Infinite, Timeout.Infinite);
+            this.ShutdownTimers();
 
             if (this.connectionState != ConnectionState.Connected && this.connectionState != ConnectionState.Connecting)
             {

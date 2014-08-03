@@ -17,7 +17,7 @@ namespace PollingTcp.Tests
             var clientNetworkLayer = new ClientTestNetworkLinkLayer();
             var transportLayer = new ClientTestTransportLayer(clientNetworkLayer);
 
-            var requestPool = new RequestPool<ClientControlFrame>(transportLayer);
+            var requestPool = new RequestPool<ClientControlFrame>(transportLayer, 4);
             
             requestPool.Start();
             

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using PollingTcp.Client;
@@ -85,8 +87,28 @@ namespace PollingTcp.Tests
         }
 
         [TestMethod]
+        public void ReadyClient_WhenConnecting_SendAnEmptyClientId()
+        {
+            var networkLayer = new ClientTestNetworkLinkLayer();
+
+            var client = new TestPollingClient(networkLayer);
+            
+            client.ConnectAsync();
+
+            Assert.AreEqual(1, networkLayer.SentBytes.Count);
+            
+            var sentFrameBytes = networkLayer.SentBytes[0];
+            var sentFrame = new GenericSerializer<ClientDataFrame>().Deserialze(sentFrameBytes);
+
+            Assert.IsNotNull(sentFrame);
+            Assert.IsTrue(sentFrame.SequenceId != 0);
+            Assert.AreEqual(0, sentFrame.ClientId);
+            Assert.IsNull(sentFrame.Payload);
+        }
+
+        [TestMethod]
         [ExpectedException(typeof(Exception))]
-        public void ConnectingClient_WhenConnection_ShouldRaiseException()
+        public void ConnectingClient_WhenTryToConnect_ShouldRaiseException()
         {
             var client = new TestPollingClient(new ClientTestNetworkLinkLayer());
 
@@ -120,26 +142,6 @@ namespace PollingTcp.Tests
             Assert.AreEqual(ConnectionState.Connecting, recordedConnectionStates[0]);
             Assert.AreEqual(ConnectionState.Timeout, recordedConnectionStates[1]);
             Assert.AreEqual(ConnectionState.Disconnected, recordedConnectionStates[2]);
-        }
-
-        [TestMethod]
-        public void ReadyClient_WhenConnecting_SendAnEmptyClientId()
-        {
-            var networkLayer = new ClientTestNetworkLinkLayer();
-
-            var client = new TestPollingClient(networkLayer);
-            
-            client.ConnectAsync();
-
-            Assert.AreEqual(1, networkLayer.SentBytes.Count);
-            
-            var sentFrameBytes = networkLayer.SentBytes[0];
-            var sentFrame = new GenericSerializer<ClientDataFrame>().Deserialze(sentFrameBytes);
-
-            Assert.IsNotNull(sentFrame);
-            Assert.IsTrue(sentFrame.SequenceId != 0);
-            Assert.AreEqual(0, sentFrame.ClientId);
-            Assert.IsNull(sentFrame.Payload);
         }
 
         [TestMethod]
@@ -211,6 +213,58 @@ namespace PollingTcp.Tests
 
             Assert.IsTrue(allSentControlFrames.Any());
             Assert.IsTrue(allSentControlFrames.OfType<ClientControlFrame>().Any());
+        }
+
+        [TestMethod]
+        public void ConnectedClient_InIdleMode_ShoudlSendKeepAlivePackes()
+        {
+            var connectionRequestResponse = new ServerDataFrame()
+            {
+                SequenceId = 7,
+                Payload = BitConverter.GetBytes(12345)
+            };
+
+            var networkLayer = new ClientTestNetworkLinkLayer();
+
+            var client = new TestPollingClient(networkLayer);
+
+            client.ReceiveTimeout = Timeout.InfiniteTimeSpan;
+            client.InitialPollingPoolSize = 0;
+
+            client.ConnectAsync();
+
+            byte[] data = this.serverDataFrameSerializer.Serialize(connectionRequestResponse);
+            networkLayer.Receive(data);
+
+            Assert.AreEqual(ConnectionState.Connected, client.ConnectionState);
+
+            var captureDuration = new Stopwatch();
+
+            var captureKeepAlivePackesTask = new Task<int>(() =>
+            {
+                captureDuration.Start();
+                var allSentControlFrames = networkLayer.SentBytes.Select(b => this.clientAnyFrameSerializer.Deserialze(b)).OfType<ClientControlFrame>().ToList();
+
+                var startNumberOfPackets = allSentControlFrames.Count;
+
+                Thread.Sleep((int)(client.Protocol.KeepAliveClientInterval.TotalMilliseconds * 2));
+                allSentControlFrames = networkLayer.SentBytes.Select(b => this.clientAnyFrameSerializer.Deserialze(b)).OfType<ClientControlFrame>().ToList();
+
+                var totalNumberOfPackets = allSentControlFrames.Count - startNumberOfPackets;
+
+                captureDuration.Stop();
+
+                return totalNumberOfPackets;
+            });
+
+            captureKeepAlivePackesTask.Start();
+            captureKeepAlivePackesTask.Wait();
+
+            var allSentWhileConnected = captureKeepAlivePackesTask.Result;
+
+            var atLeastExpectedNumberOfKeepAlivePackes = (captureDuration.ElapsedMilliseconds / client.Protocol.KeepAliveClientInterval.TotalMilliseconds) - 1;
+
+            Assert.IsTrue(allSentWhileConnected > atLeastExpectedNumberOfKeepAlivePackes);
         }
 
         [TestMethod]

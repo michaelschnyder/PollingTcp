@@ -10,10 +10,14 @@ namespace PollingTcp.Client
         List<RequestClient<TSendControlFrameType>> clients = new List<RequestClient<TSendControlFrameType>>();
         private readonly int initialClientSize;
 
-        public RequestPool(ISendControlFrame<TSendControlFrameType> transportLayer)
+        public RequestPool(ISendControlFrame<TSendControlFrameType> transportLayer, int initialNumberOfClients)
         {
             this.transportLayer = transportLayer;
-            this.initialClientSize = 4;
+            this.initialClientSize = initialNumberOfClients;
+        }
+
+        public RequestPool(ISendControlFrame<TSendControlFrameType> transportLayer) : this(transportLayer, 44)
+        {
         }
 
         public int InitialClientSize
