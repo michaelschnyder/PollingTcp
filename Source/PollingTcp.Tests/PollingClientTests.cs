@@ -216,7 +216,7 @@ namespace PollingTcp.Tests
         }
 
         [TestMethod]
-        public void ConnectedClient_InIdleMode_ShoudlSendKeepAlivePackes()
+        public void ConnectedClient_InIdleMode_ShouldSendKeepAlivePackets()
         {
             var connectionRequestResponse = new ServerDataFrame()
             {
@@ -247,7 +247,7 @@ namespace PollingTcp.Tests
 
                 var startNumberOfPackets = allSentControlFrames.Count;
 
-                Thread.Sleep((int)(client.Protocol.KeepAliveClientInterval.TotalMilliseconds * 2));
+                Thread.Sleep((int)(client.Protocol.KeepAliveClientInterval.TotalMilliseconds * 1.5));
                 allSentControlFrames = networkLayer.SentBytes.Select(b => this.clientAnyFrameSerializer.Deserialze(b)).OfType<ClientControlFrame>().ToList();
 
                 var totalNumberOfPackets = allSentControlFrames.Count - startNumberOfPackets;
