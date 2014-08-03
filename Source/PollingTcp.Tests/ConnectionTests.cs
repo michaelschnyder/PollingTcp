@@ -23,6 +23,8 @@ namespace PollingTcp.Tests
             var client = new TestPollingClient(networkLayer);
             var server = new TestPollingServer(networkLayer);
 
+            client.InitialPollingPoolSize = 1;
+
             var session = ConnectionHelper.WaitForConnectionHandshake(server, client);
 
             session.FrameReceived += (sender, args) => receivedMessagesInSession.Add(Encoding.UTF8.GetString(args.Frame.Payload));
@@ -48,9 +50,13 @@ namespace PollingTcp.Tests
             var client = new TestPollingClient(networkLayer);
             var server = new TestPollingServer(networkLayer);
 
+            client.InitialPollingPoolSize = 4;
+
             server.Start();
 
             var session = ConnectionHelper.WaitForConnectionHandshake(server, client);
+            ConnectionHelper.WaitForConnectionEstablishment(session);
+
             client.FrameReceived += (sender, args) =>
             {
                 receivedMessagesOnClient.Add(Encoding.UTF8.GetString(args.Frame.Payload));
@@ -62,7 +68,7 @@ namespace PollingTcp.Tests
                 Payload = Encoding.UTF8.GetBytes(helloWorld)
             });
 
-            atLeastOneFrameReceivedOnClient.WaitOne(1500);
+            atLeastOneFrameReceivedOnClient.WaitOne(5000);
 
             Assert.IsTrue(receivedMessagesOnClient.Any());
             Assert.AreEqual(helloWorld, receivedMessagesOnClient[0]);
