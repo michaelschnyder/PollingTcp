@@ -31,11 +31,18 @@ namespace PollingTcp.Server
 
         private readonly TimeSpan handshakeTimeout;
         private readonly TimeSpan dataReceiveTimeout;
-        
 
         public event EventHandler<FrameReceivedEventArgs<TClientDataFrameType>> FrameReceived;
 
         public event EventHandler<SessionStateChangedEventArgs> StateChanged;
+
+        public event EventHandler<SessionClosedEventArgs> SessionClosed;
+
+        protected virtual void OnSessionClosed(SessionClosedEventArgs e)
+        {
+            EventHandler<SessionClosedEventArgs> handler = this.SessionClosed;
+            if (handler != null) handler(this, e);
+        }
 
         protected virtual void OnStateChanged(SessionStateChangedEventArgs e)
         {
@@ -95,12 +102,25 @@ namespace PollingTcp.Server
 
         private void HandshakeTimeoutCallback(object state)
         {
+            this.SetNewSessionState(SessionState.Timeout);
+            this.CloseSession(CloseReason.HandshakeTimeout);
+        }
 
+        private void CloseSession(CloseReason reason)
+        {
+            this.OnSessionClosed(new SessionClosedEventArgs
+            {
+                ClientId = this.clientId,
+                Reason = reason
+            });
+
+            this.SetNewSessionState(SessionState.Closed);
         }
 
         private void DataReceiveTimeoutCallback(object state)
         {
-
+            this.SetNewSessionState(SessionState.Timeout);
+            this.CloseSession(CloseReason.ReceiveTimeout);
         }
 
         private void FrameBufferOnFrameBlockReceived(object sender, FrameBlockReceivedEventArgs<TClientDataFrameType> frameBlockReceivedEventArgs)
@@ -116,21 +136,29 @@ namespace PollingTcp.Server
 
         public void Send(TServerDataFrameType serverFrame)
         {
+            if (this.sessionState != SessionState.Connected)
+            {
+                throw new Exception("Illegal state to send anything. Current state: " + this.SessionState);
+            }
+
             this.queue.Enqueue(serverFrame);
         }
 
-        internal TServerDataFrameType Accept()
+        internal TServerDataFrameType HandleConnectionRequest()
         {
             var response = new TServerDataFrameType
             {
                 Payload = BitConverter.GetBytes(this.ClientId)
             };
 
+            return this.SetSequenceNr(response);
+        }
+
+        public void Start()
+        {
             this.SetNewSessionState(SessionState.Handshaking);
 
             this.handshakeTimer.Change(this.handshakeTimeout, Timeout.InfiniteTimeSpan);
-
-            return this.SetSequenceNr(response);
         }
 
         private void SetNewSessionState(SessionState state)

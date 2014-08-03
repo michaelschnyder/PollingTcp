@@ -133,7 +133,9 @@ namespace PollingTcp.Server
             this.clientSessions.Add(clientSession);
             this.connectionRequests.Add(clientSession);
 
-            var acceptResponse = clientSession.Accept();
+            clientSession.Start();
+
+            var acceptResponse = clientSession.HandleConnectionRequest();
             return acceptResponse;
         }
 

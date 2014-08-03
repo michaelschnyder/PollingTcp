@@ -21,7 +21,7 @@ namespace PollingTcp.Tests
             var networkLayer = new CombinedTestNetworkLayer();
             
             var client = new TestPollingClient(networkLayer);
-            var server = new TestPollingServer(networkLayer, 10, 10);
+            var server = new TestPollingServer(networkLayer);
 
             var session = ConnectionHelper.WaitForConnectionEstablishment(server, client);
 
@@ -46,7 +46,7 @@ namespace PollingTcp.Tests
             var networkLayer = new CombinedTestNetworkLayer();
 
             var client = new TestPollingClient(networkLayer);
-            var server = new TestPollingServer(networkLayer, 10, 10);
+            var server = new TestPollingServer(networkLayer);
 
             server.Start();
 
@@ -62,7 +62,7 @@ namespace PollingTcp.Tests
                 Payload = Encoding.UTF8.GetBytes(helloWorld)
             });
 
-            atLeastOneFrameReceivedOnClient.WaitOne(1000);
+            atLeastOneFrameReceivedOnClient.WaitOne(1500);
 
             Assert.IsTrue(receivedMessagesOnClient.Any());
             Assert.AreEqual(helloWorld, receivedMessagesOnClient[0]);
