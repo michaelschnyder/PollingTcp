@@ -7,7 +7,7 @@ using PollingTcp.Shared;
 
 namespace PollingTcp.Server
 {
-    public class PollingClientSession<TClientDataFrameType, TServerDataFrameType>
+    public class PollingClientSession<TClientDataFrameType, TServerDataFrameType> : IDisposable
         where TClientDataFrameType : ClientFrame, ISequencedDataFrame,new() 
         where TServerDataFrameType : ServerDataFrame, new()
     {
@@ -32,11 +32,17 @@ namespace PollingTcp.Server
         private readonly TimeSpan handshakeTimeout;
         private readonly TimeSpan dataReceiveTimeout;
 
+        #region Events
+
         public event EventHandler<FrameReceivedEventArgs<TClientDataFrameType>> FrameReceived;
 
         public event EventHandler<SessionStateChangedEventArgs> StateChanged;
 
         public event EventHandler<SessionClosedEventArgs> SessionClosed;
+
+        #endregion
+
+        #region Event Invocators
 
         protected virtual void OnSessionClosed(SessionClosedEventArgs e)
         {
@@ -56,6 +62,10 @@ namespace PollingTcp.Server
             if (handler != null) handler(this, e);
         }
 
+        #endregion
+
+        #region Properties
+
         public int ClientId
         {
             get { return this.clientId; }
@@ -71,18 +81,22 @@ namespace PollingTcp.Server
             get { return this.sessionState; }
         }
 
+        #endregion
+
+        #region Constructor(s)
+
         public PollingClientSession(int clientId, IProtocolRuntimeSpefication protocolruntimeSpecification, TimeSpan handshakeTimeout, TimeSpan dataReceiveTimeout)
         {
             this.clientId = clientId;
             this.protocolruntimeSpecification = protocolruntimeSpecification;
-            
+
             this.maxIncomingSequenceNr = protocolruntimeSpecification.MaxClientSequenceValue;
             this.maxOutgoingSequenceNr = protocolruntimeSpecification.MaxServerSequenceValue;
 
             this.handshakeTimeout = handshakeTimeout;
             this.dataReceiveTimeout = dataReceiveTimeout;
 
-            this.currentLocalSequenceNr = new Random((int)DateTime.Now.Ticks).Next(1, this.maxOutgoingSequenceNr);
+            this.currentLocalSequenceNr = new Random((int) DateTime.Now.Ticks).Next(1, this.maxOutgoingSequenceNr);
 
             this.frameBuffer = new FrameBuffer<TClientDataFrameType>(maxIncomingSequenceNr);
             this.frameBuffer.FrameBlockReceived += this.FrameBufferOnFrameBlockReceived;
@@ -91,6 +105,9 @@ namespace PollingTcp.Server
             this.dataReceiveTimer = new Timer(this.DataReceiveTimeoutCallback);
             this.keepAlivePacketSenderTimer = new Timer(this.KeepAlivePackSenderTimerCallback);
         }
+
+
+        #endregion
 
         private void KeepAlivePackSenderTimerCallback(object state)
         {
@@ -106,6 +123,12 @@ namespace PollingTcp.Server
             this.CloseSession(CloseReason.HandshakeTimeout);
         }
 
+        private void DataReceiveTimeoutCallback(object state)
+        {
+            this.SetNewSessionState(SessionState.Timeout);
+            this.CloseSession(CloseReason.ReceiveTimeout);
+        }
+
         private void CloseSession(CloseReason reason)
         {
             this.OnSessionClosed(new SessionClosedEventArgs
@@ -115,12 +138,6 @@ namespace PollingTcp.Server
             });
 
             this.SetNewSessionState(SessionState.Closed);
-        }
-
-        private void DataReceiveTimeoutCallback(object state)
-        {
-            this.SetNewSessionState(SessionState.Timeout);
-            this.CloseSession(CloseReason.ReceiveTimeout);
         }
 
         private void FrameBufferOnFrameBlockReceived(object sender, FrameBlockReceivedEventArgs<TClientDataFrameType> frameBlockReceivedEventArgs)
@@ -212,6 +229,19 @@ namespace PollingTcp.Server
             }
 
             return null;
+        }
+
+        protected virtual void Dispose(bool cleanupBothManagedAndNativeResources)
+        {
+            this.dataReceiveTimer.Dispose();
+            this.handshakeTimer.Dispose();
+            this.keepAlivePacketSenderTimer.Dispose();
+        }
+
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -53,6 +53,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="ClientSessionTests.cs" />
     <Compile Include="Helper\CombinedTestNetworkLayer.cs" />
     <Compile Include="ConnectionTests.cs" />
     <Compile Include="Helper\BinaryClientFrameEncoder.cs" />

@@ -38,6 +38,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -48,6 +49,8 @@
     <Compile Include="Client\ConnectionState.cs" />
     <Compile Include="Client\ConnectionStateChangedEventArgs.cs" />
     <Compile Include="Client\ISendControlFrame.cs" />
+    <Compile Include="Server\CloseReason.cs" />
+    <Compile Include="Server\SessionClosedEventArgs.cs" />
     <Compile Include="Server\SessionState.cs" />
     <Compile Include="Server\SessionStateChangedEventArgs.cs" />
     <Compile Include="Shared\DefaultProtocolSpecification.cs" />
