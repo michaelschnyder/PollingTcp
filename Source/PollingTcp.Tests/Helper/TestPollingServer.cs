@@ -7,7 +7,7 @@ namespace PollingTcp.Tests
     internal class TestPollingServer : PollingServer<ClientControlFrame, ClientDataFrame, ServerDataFrame>
     {
         public TestPollingServer(IServerNetworkLinkLayer networkLinkLayer) : 
-            base(networkLinkLayer, new BinaryClientFrameEncoder(), new BinaryServerFrameEncoder(), 50, 50)
+            base(networkLinkLayer, new TestProtocolSpecification() { ClientEncoder = new BinaryClientFrameEncoder(), ServerEncoder = new BinaryServerFrameEncoder()})
         {
         }
 
