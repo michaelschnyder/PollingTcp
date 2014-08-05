@@ -217,7 +217,7 @@ namespace PollingTcp.Client
         {
             if (this.connectionState != ConnectionState.Disconnected)
             {
-                throw new Exception("Cannot start connection when not beeing in Disconnected-State");    
+                throw new Exception(string.Format("Cannot start connection when not beeing in '{0}'-state", this.connectionState));    
             }
 
             SetNewConnectionState(ConnectionState.Connecting);

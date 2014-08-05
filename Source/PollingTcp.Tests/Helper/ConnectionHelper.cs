@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PollingTcp.Client;
@@ -28,7 +29,14 @@ namespace PollingTcp.Tests.Helper
             {
                 while (client.ConnectionState != ConnectionState.Connected)
                 {
-                    client.ConnectAsync().Wait();
+                    try
+                    {
+                        client.ConnectAsync().Wait();
+                    }
+                    catch (Exception e)
+                    {
+                        
+                    }
                 }
 
                 isAcceptedBeforeTimeout = isSessionAccepted.WaitOne(5000);
