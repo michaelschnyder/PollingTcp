@@ -47,7 +47,7 @@ namespace PollingTcp.Tests
         }
 
         [TestMethod]
-        public void HandshakingSession_DoesntReceivedData_ShouldCloseWithCorrectReason()
+        public void HandshakingSession_DoesntReceivedData_ShouldCloseWithHandshareTimeoutReason()
         {
             var sessionCloseReason = CloseReason.Unknown;
 
@@ -72,7 +72,7 @@ namespace PollingTcp.Tests
         }
 
         [TestMethod]
-        public void EstablishedSession_ReceivesNoData_ShouldCloseWithCorrectReason()
+        public void EstablishedSession_ReceivesNoData_ShouldCloseReceiveTimeoutReason()
         {
             var sessionCloseReason = CloseReason.Unknown;
 
@@ -95,15 +95,25 @@ namespace PollingTcp.Tests
 
             Assert.AreEqual(SessionState.Connected, session.SessionState);
 
-            client.DisconnectAsync().Wait();
+            var disconnectTask = client.DisconnectAsync();
+            disconnectTask.Wait(5000);
 
+            Assert.AreEqual(TaskStatus.RanToCompletion, disconnectTask.Status, "The disconnectAsync should be done withing 5s");
             Assert.AreEqual(0, client.CurrentPollingPoolSize);
 
             var eventHasBeenRaised = waitEvent.WaitOne(5000);
 
-            Assert.IsTrue(eventHasBeenRaised, "There should be a timeout event within the desired timeout!");
+            Assert.IsTrue(eventHasBeenRaised, "There should be an event within the desired timeout!");
             Assert.AreEqual(SessionState.Closed, session.SessionState);
             Assert.AreEqual(CloseReason.ReceiveTimeout, sessionCloseReason);
+
+            server.Stop();
+        }
+
+        [TestMethod]
+        public void EstablishedSession_ReceivesOutOfBandSequence_ShouldQuit()
+        {
+            
         }
 
         private static PollingClientSession<ClientDataFrame, ServerDataFrame> CreateDefaultSession()
