@@ -11,7 +11,9 @@ namespace PollingTcp.Tests.Helper
     {
         public static PollingClientSession<ClientDataFrame, ServerDataFrame> WaitForConnectionHandshake(TestPollingServer server, TestPollingClient client)
         {
-            var isSessionAccepted = new AutoResetEvent(false);
+            var isSessionAccepted = new ManualResetEvent(false);
+
+            var isAcceptedBeforeTimeout = false;
 
             PollingClientSession<ClientDataFrame, ServerDataFrame> session = null;
             server.Start();
@@ -24,21 +26,24 @@ namespace PollingTcp.Tests.Helper
 
             var connectTask = new Task(() =>
             {
-                while (!isSessionAccepted.WaitOne(500) && client.ConnectionState != ConnectionState.Connected)
+                while (client.ConnectionState != ConnectionState.Connected)
                 {
                     client.ConnectAsync().Wait();
-
-                    isSessionAccepted.WaitOne(10);
                 }
+
+                isAcceptedBeforeTimeout = isSessionAccepted.WaitOne(5000);
             });
 
             acceptTask.Start();
             connectTask.Start();
 
-            var allCompleted = Task.WaitAll(new[] {acceptTask, connectTask}, 10000);
+            var allCompletedWithoutTimeout = Task.WaitAll(new[] { acceptTask, connectTask }, 10000);
 
-            Assert.IsTrue(allCompleted, "There was a timeout while waiting for all tasks to complete!");
             Assert.AreEqual(ConnectionState.Connected, client.ConnectionState);
+
+            Assert.IsTrue(isAcceptedBeforeTimeout, "There was a timeout while waiting for the accept task!");
+            Assert.IsTrue(allCompletedWithoutTimeout, "There was a timeout while waiting for all tasks to complete!");
+
             Assert.IsNotNull(session);
             
             return session;
