@@ -16,22 +16,28 @@ namespace PollingTcp.Tests.Helper
             PollingClientSession<ClientDataFrame, ServerDataFrame> session = null;
             server.Start();
 
-            var task = new Task(() =>
+            var acceptTask = new Task(() =>
             {
                 session = server.Accept();
                 isSessionAccepted.Set();
             });
 
-            task.Start();
-
-            while (!isSessionAccepted.WaitOne(10))
+            var connectTask = new Task(() =>
             {
-                if (client.ConnectionState == ConnectionState.Disconnected)
+                while (!isSessionAccepted.WaitOne(500) && client.ConnectionState != ConnectionState.Connected)
                 {
                     client.ConnectAsync().Wait();
-                }
-            }
 
+                    isSessionAccepted.WaitOne(10);
+                }
+            });
+
+            acceptTask.Start();
+            connectTask.Start();
+
+            var allCompleted = Task.WaitAll(new[] {acceptTask, connectTask}, 10000);
+
+            Assert.IsTrue(allCompleted, "There was a timeout while waiting for all tasks to complete!");
             Assert.AreEqual(ConnectionState.Connected, client.ConnectionState);
             Assert.IsNotNull(session);
             
