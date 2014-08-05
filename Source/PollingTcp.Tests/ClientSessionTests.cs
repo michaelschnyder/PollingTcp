@@ -91,6 +91,8 @@ namespace PollingTcp.Tests
                 waitEvent.Set();
             };
 
+            return;
+
             ConnectionHelper.WaitForConnectionEstablishment(session);
 
             Assert.AreEqual(SessionState.Connected, session.SessionState);
