@@ -49,7 +49,7 @@ namespace PollingTcp.Tests
             var server = new TestPollingServer(networkLayer);
 
             server.Start();
-
+            
             return;
 
             var session = ConnectionHelper.WaitForConnectionHandshake(server, client);

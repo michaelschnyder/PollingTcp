@@ -177,19 +177,22 @@ namespace PollingTcp.Server
 
             PollingClientSession<TClientDataFrameType, TServerDataFrameType> pollingClientSession = null;
 
-            while (pollingClientSession == null && !this.cancellationToken.IsCancellationRequested)
+            while (!this.cancellationToken.IsCancellationRequested)
             {
-                this.connectionRequests.TryTake(out pollingClientSession, 1000);
+                if (this.connectionRequests.TryTake(out pollingClientSession, 10000))
+                {
+                    return pollingClientSession;
+                };
             }
 
-            return pollingClientSession;
+            return null;
         }
 
         public Task<PollingClientSession<TClientDataFrameType, TServerDataFrameType>> AcceptAsync()
         {
             Task<PollingClientSession<TClientDataFrameType, TServerDataFrameType>> task;
                 
-            task = new Task<PollingClientSession<TClientDataFrameType, TServerDataFrameType>>(this.Accept);
+            task = new Task<PollingClientSession<TClientDataFrameType, TServerDataFrameType>>(this.Accept, TaskCreationOptions.LongRunning);
 
             task.Start();
 
