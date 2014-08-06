@@ -83,8 +83,6 @@ namespace PollingTcp.Tests
             var client = new TestPollingClient(networkLayer);
             var server = new TestPollingServer(networkLayer);
 
-            return;
-
             var session = ConnectionHelper.WaitForSessionOnServer(server, client);
             
             session.SessionClosed += (sender, args) =>
@@ -93,13 +91,9 @@ namespace PollingTcp.Tests
                 waitEvent.Set();
             };
 
-            return;
-
             ConnectionHelper.WaitForConnectionEstablishmentOnServer(session);
 
             Assert.AreEqual(SessionState.Connected, session.SessionState);
-
-            return;
 
             var disconnectTask = client.DisconnectAsync();
             disconnectTask.Wait(5000);

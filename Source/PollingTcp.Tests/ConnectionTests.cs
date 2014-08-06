@@ -23,6 +23,8 @@ namespace PollingTcp.Tests
             var client = new TestPollingClient(networkLayer);
             var server = new TestPollingServer(networkLayer);
 
+            server.Start();
+
             var session = ConnectionHelper.WaitForSessionOnServer(server, client);
 
             session.FrameReceived += (sender, args) => receivedMessagesInSession.Add(Encoding.UTF8.GetString(args.Frame.Payload));
@@ -50,8 +52,6 @@ namespace PollingTcp.Tests
 
             server.Start();
 
-            return;
-
             var session = ConnectionHelper.WaitForSessionOnServer(server, client);
             session = ConnectionHelper.WaitForConnectionEstablishmentOnServer(session);
 
@@ -78,7 +78,7 @@ namespace PollingTcp.Tests
         [TestMethod]
         public void ConnectionEstablished_ServerIsStopped_ClientDisconnects()
         {
-            
+            // Todo
         }
     }
 }
