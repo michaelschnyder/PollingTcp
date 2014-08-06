@@ -175,15 +175,12 @@ namespace PollingTcp.Server
 
             this.handleConnectionRequests = true;
 
-            PollingClientSession<TClientDataFrameType, TServerDataFrameType> pollingClientSession = null;
+            PollingClientSession<TClientDataFrameType, TServerDataFrameType> pollingClientSession;
 
-            while (!this.cancellationToken.IsCancellationRequested)
+            if (this.connectionRequests.TryTake(out pollingClientSession, -1, this.cancellationToken.Token))
             {
-                if (this.connectionRequests.TryTake(out pollingClientSession, 10000))
-                {
-                    return pollingClientSession;
-                };
-            }
+                return pollingClientSession;
+            };
 
             return null;
         }

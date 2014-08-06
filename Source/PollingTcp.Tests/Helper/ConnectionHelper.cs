@@ -17,21 +17,23 @@ namespace PollingTcp.Tests.Helper
 
             var acceptTask = server.AcceptAsync();
 
-            EventHandler<ConnectionStateChangedEventArgs> clientOnConnectionStateChanged = delegate(object sender, ConnectionStateChangedEventArgs args)
+            EventHandler<ConnectionStateChangedEventArgs> clientOnConnectionStateChanged = (sender, args) =>
             {
                 Console.WriteLine("Changed from {0} to {1}", args.PreviousState, args.State);
             };
 
             client.ConnectionStateChanged += clientOnConnectionStateChanged;
-
+            
             var connectTask = client.ConnectAsync();
 
-            var allCompletedWithoutTimeout = Task.WaitAll(new Task[] { acceptTask, connectTask }, 10000);
+            var allCompletedWithoutTimeout = Task.WaitAll(new Task[] { acceptTask, connectTask }, 5000);
 
             if (allCompletedWithoutTimeout)
             {
                 session = acceptTask.Result;
             }
+
+            client.ConnectionStateChanged -= clientOnConnectionStateChanged;
 
             Assert.IsTrue(allCompletedWithoutTimeout, string.Format("There was a timeout while waiting for all tasks to complete! AcceptTask: {0}, ConnectTask: {1}", acceptTask.Status, connectTask.Status));
             
