@@ -262,7 +262,7 @@ namespace PollingTcp.Client
                 }
 
                 return this.ConnectionState == ConnectionState.Connected;
-            });
+            }, TaskCreationOptions.PreferFairness);
 
             ensureConnectedWithinTimeout.Start();
 

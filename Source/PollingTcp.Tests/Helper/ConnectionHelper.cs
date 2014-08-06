@@ -10,15 +10,21 @@ namespace PollingTcp.Tests.Helper
 {
     internal class ConnectionHelper
     {
-        public static PollingClientSession<ClientDataFrame, ServerDataFrame> WaitForConnectionHandshake(TestPollingServer server, TestPollingClient client)
+        public static PollingClientSession<ClientDataFrame, ServerDataFrame> WaitForSessionOnServer(TestPollingServer server, TestPollingClient client)
         {
             PollingClientSession<ClientDataFrame, ServerDataFrame> session = null;
             server.Start();
 
             var acceptTask = server.AcceptAsync();
+            var wasConnectedOnce = false;
 
             EventHandler<ConnectionStateChangedEventArgs> clientOnConnectionStateChanged = (sender, args) =>
             {
+                if (args.State == ConnectionState.Connected)
+                {
+                    wasConnectedOnce = true;
+                }
+
                 Console.WriteLine("Changed from {0} to {1}", args.PreviousState, args.State);
             };
 
@@ -26,7 +32,7 @@ namespace PollingTcp.Tests.Helper
             
             var connectTask = client.ConnectAsync();
 
-            var allCompletedWithoutTimeout = Task.WaitAll(new Task[] { acceptTask, connectTask }, 5000);
+            var allCompletedWithoutTimeout = Task.WaitAll(new Task[] { acceptTask, connectTask }, server.HandshakeTimeout + server.DataReceiveTimeout + client.ConnectionTimeout + client.ReceiveTimeout);
 
             if (allCompletedWithoutTimeout)
             {
@@ -36,6 +42,7 @@ namespace PollingTcp.Tests.Helper
             client.ConnectionStateChanged -= clientOnConnectionStateChanged;
 
             Assert.IsTrue(allCompletedWithoutTimeout, string.Format("There was a timeout while waiting for all tasks to complete! AcceptTask: {0}, ConnectTask: {1}", acceptTask.Status, connectTask.Status));
+            Assert.IsFalse(wasConnectedOnce && client.ConnectionState != ConnectionState.Connected, "The client was connected once, but is now in {0}-state", client.ConnectionState);
             
             Assert.AreEqual(ConnectionState.Connected, client.ConnectionState);
             Assert.IsNotNull(session);
@@ -43,7 +50,7 @@ namespace PollingTcp.Tests.Helper
             return session;
         }
 
-        public static PollingClientSession<ClientDataFrame, ServerDataFrame> WaitForConnectionEstablishment(PollingClientSession<ClientDataFrame, ServerDataFrame> session)
+        public static PollingClientSession<ClientDataFrame, ServerDataFrame> WaitForConnectionEstablishmentOnServer(PollingClientSession<ClientDataFrame, ServerDataFrame> session)
         {
             var isConnected = new AutoResetEvent(false);
 

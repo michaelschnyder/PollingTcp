@@ -85,7 +85,7 @@ namespace PollingTcp.Tests
 
             return;
 
-            var session = ConnectionHelper.WaitForConnectionHandshake(server, client);
+            var session = ConnectionHelper.WaitForSessionOnServer(server, client);
             
             session.SessionClosed += (sender, args) =>
             {
@@ -95,7 +95,7 @@ namespace PollingTcp.Tests
 
             return;
 
-            ConnectionHelper.WaitForConnectionEstablishment(session);
+            ConnectionHelper.WaitForConnectionEstablishmentOnServer(session);
 
             Assert.AreEqual(SessionState.Connected, session.SessionState);
 
