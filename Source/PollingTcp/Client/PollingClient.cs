@@ -17,9 +17,11 @@ namespace PollingTcp.Client
 
         private ConnectionState connectionState;
 
+        private object connectionStateLock = new object();
+
         private int clientId;
 
-        private readonly AutoResetEvent connectedEvent = new AutoResetEvent(false);
+        private readonly ManualResetEvent connectedEvent = new ManualResetEvent(false);
         private TimeSpan connectionTimeout = TimeSpan.FromMilliseconds(1000);
         private TimeSpan receiveTimeout = TimeSpan.FromMilliseconds(1000);
 
@@ -176,11 +178,21 @@ namespace PollingTcp.Client
 
             if (this.connectionState == ConnectionState.Connecting && this.expectConnectionEstablishement)
             {
-                var data = frameReceivedEventArgs.Frame.Payload;
+                lock (this.connectionStateLock)
+                {
+                    if (this.connectionState == ConnectionState.Connecting && this.expectConnectionEstablishement)
+                    {
+                        var data = frameReceivedEventArgs.Frame.Payload;
 
-                var assignedClientId = BitConverter.ToInt32(data, 0);
+                        var assignedClientId = BitConverter.ToInt32(data, 0);
 
-                this.StartConnection(assignedClientId);
+                        this.StartConnection(assignedClientId);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Received connection response while not in connecting mode anymore or no one would like to accept. State: {0}, Accept: {1}.", this.connectionState, this.expectConnectionEstablishement);
+                    }
+                }
             }
             else if (this.connectionState == ConnectionState.Connected)
             {
@@ -220,6 +232,7 @@ namespace PollingTcp.Client
                 throw new Exception(string.Format("Cannot start connection when not beeing in '{0}'-state", this.connectionState));    
             }
 
+            this.connectedEvent.Reset();
             SetNewConnectionState(ConnectionState.Connecting);
 
             this.expectConnectionEstablishement = true;
@@ -230,14 +243,22 @@ namespace PollingTcp.Client
             var ensureConnectedWithinTimeout = new Task<bool>(() =>
             {
                 this.connectedEvent.WaitOne(this.ConnectionTimeout);
-                this.connectedEvent.Reset();
-
-                this.expectConnectionEstablishement = false;
 
                 if (this.connectionState != ConnectionState.Connected)
                 {
-                    this.SetNewConnectionState(ConnectionState.Timeout);
-                    this.SetNewConnectionState(ConnectionState.Disconnected);
+                    lock (this.connectionStateLock)
+                    {
+                        if (this.connectionState != ConnectionState.Connected)
+                        {
+                            this.expectConnectionEstablishement = false;
+
+                            if (this.connectionState != ConnectionState.Connected)
+                            {
+                                this.SetNewConnectionState(ConnectionState.Timeout);
+                                this.SetNewConnectionState(ConnectionState.Disconnected);
+                            }
+                        }
+                    }
                 }
 
                 return this.ConnectionState == ConnectionState.Connected;
